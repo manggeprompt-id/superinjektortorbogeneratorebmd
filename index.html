@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>E-BMD Donggala Turbo Generator v10.0 — Pengadaan SPK/BAST & Input LHI DISDIKBUD</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-emerald-500 selection:text-slate-950">
+
+  <!-- TOP NAVBAR -->
+  <header class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3">
+    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-emerald-500 to-teal-600 flex items-center justify-center shadow-lg shadow-emerald-500/20 font-black text-slate-950 text-xl">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="font-extrabold text-base md:text-lg tracking-tight text-white">E-BMD DONGGALA TURBO GENERATOR</h1>
+            <span class="text-[11px] font-bold uppercase px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+              v10.0 LHI DISDIKBUD + PENGADAAN SPK/BAST
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Otomatisasi Input LHI (Laporan Hasil Inventarisasi 2025/2026) & Pengadaan BMD (Mobiler, Peralatan, Buku)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="switchScriptMode('LHI'); copyActiveScript();" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-lg shadow-cyan-600/20">
+          📋 Copy ROBOT INPUT LHI (Inventarisasi)
+        </button>
+        <button onclick="switchScriptMode('AUTOPILOT'); copyActiveScript();" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-extrabold text-xs transition flex items-center gap-1.5 shadow-lg shadow-rose-600/20">
+          🤖 Copy MASTER AUTO-PILOT (SPK/BAST)
+        </button>
+        <button onclick="downloadThisHtml()" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg shadow-blue-600/30 transition flex items-center gap-1.5">
+          💾 Download `index.html` (v10.0)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 hidden bg-emerald-500 text-slate-950 font-extrabold px-5 py-3 rounded-xl shadow-2xl border border-emerald-300 flex items-center gap-2 text-sm">
+    <span>✅</span>
+    <span id="toast-msg">Berhasil disalin!</span>
+  </div>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- KOLOM KIRI (7 KOLOM): UPLOAD EXCEL LHI / KK, FILTER SEKOLAH, KARTU DOKUMEN & TABEL -->
+    <div class="lg:col-span-7 flex flex-col gap-5">
+
+      <!-- STEP 1: DROPZONE EXCEL & FILTER MODE -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 font-bold text-xs flex items-center justify-center border border-cyan-500/30">1</span>
+            <h2 class="font-bold text-sm md:text-base text-white">Upload File Excel (`LHI DISDIKBUD 2025 10.xlsx` / Kertas Kerja Mobiler & Buku)</h2>
+          </div>
+          <span id="school-counter" class="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-800 text-emerald-400 border border-slate-700">
+            4 Paket Data Siap
+          </span>
+        </div>
+
+        <!-- TOMBOL FILTER CEPAT KATEGORI -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+          <button onclick="setCategoryPreset('ALL')" id="preset-all" class="py-2 px-2.5 rounded-xl font-bold text-xs border border-slate-700 bg-slate-800 text-white hover:bg-slate-700 transition flex items-center justify-center gap-1">
+            ✨ Semua Data
+          </button>
+          <button onclick="setCategoryPreset('LHI')" id="preset-lhi" class="py-2 px-2.5 rounded-xl font-extrabold text-xs border border-cyan-500/40 bg-cyan-500/20 text-cyan-300 hover:bg-cyan-500/30 transition flex items-center justify-center gap-1 shadow-sm">
+            📋 Khusus Data LHI (Inventarisasi)
+          </button>
+          <button onclick="setCategoryPreset('MOBILER')" id="preset-mobiler" class="py-2 px-2.5 rounded-xl font-bold text-xs border border-blue-500/40 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition flex items-center justify-center gap-1">
+            🪑 Belanja Mobiler (1.3.2)
+          </button>
+          <button onclick="setCategoryPreset('BUKU')" id="preset-buku" class="py-2 px-2.5 rounded-xl font-bold text-xs border border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition flex items-center justify-center gap-1">
+            📘 Belanja Buku (1.3.5)
+          </button>
+        </div>
+
+        <!-- DROPZONE -->
+        <label for="excel-upload" class="cursor-pointer group block border-2 border-dashed border-cyan-500/40 hover:border-cyan-400 bg-slate-950/60 hover:bg-slate-900/90 transition rounded-xl p-4 text-center">
+          <input id="excel-upload" type="file" accept=".xlsx,.xls,.csv" multiple class="hidden" onchange="handleExcelFiles(this.files)" />
+          <div class="flex flex-col items-center justify-center gap-1">
+            <div class="text-2xl group-hover:scale-110 transition">📂</div>
+            <p class="text-xs md:text-sm font-bold text-slate-200">
+              Klik atau Tarik File <span class="text-cyan-400 underline">LHI DISDIKBUD 2025 10.xlsx</span> / Kertas Kerja Sekolah ke Sini
+            </p>
+            <p class="text-[11px] text-slate-400">
+              Otomatis mengenali format <b>LHI (Laporan Hasil Inventarisasi: Kode Barang, NUP, Merk/Type, Tahun, Harga, Kondisi B/KB/RB, Status)</b> maupun <b>KK Pengadaan SPK/BAST</b>
+            </p>
+          </div>
+        </label>
+
+        <!-- PENCARIAN & DROPDOWN SEKOLAH / UPB -->
+        <div class="mt-4">
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Pilih Sekolah / UPB / Sheet LHI:</label>
+            <span id="search-match-info" class="text-[11px] font-semibold text-cyan-400">Menampilkan semua paket</span>
+          </div>
+
+          <div class="relative mb-2">
+            <input id="school-search-input" type="text" oninput="filterSchoolList()" placeholder="🔍 Ketik nama sekolah / UPB, nomor LHI, atau nomor SPK..." class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl pl-3.5 pr-20 py-2 text-xs text-white placeholder-slate-500 outline-none transition" />
+            <button onclick="clearSchoolSearch()" id="clear-search-btn" class="hidden absolute right-2 top-1/2 -translate-y-1/2 px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-bold">
+              ✖ Reset
+            </button>
+          </div>
+
+          <select id="school-selector" onchange="selectSchool(this.value)" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-500 rounded-xl px-3.5 py-2.5 text-sm font-bold text-emerald-300 outline-none"></select>
+        </div>
+
+        <!-- KARTU DATA DOKUMEN (LHI / SPK / BAST / SPV) -->
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <!-- KARTU 1: DOKUMEN SPK / LHI UTAMA -->
+          <div class="bg-slate-950/90 border border-emerald-500/30 rounded-xl p-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span id="card1-title" class="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">1. DOKUMEN LHI / SPK</span>
+                <span id="info-kib-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300">LHI 2025</span>
+              </div>
+              <div id="info-nospk" class="mono text-xs font-bold text-amber-300 break-all mt-1">-</div>
+              <div class="text-[11px] text-slate-400 mt-1 flex items-center justify-between">
+                <span>Tgl: <strong id="info-tglspk" class="text-white mono">-</strong></span>
+                <span id="info-totalrp" class="font-extrabold text-emerald-400 mono">Rp 0</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 truncate">
+                UPB/Penyedia: <strong id="info-penyedia" class="text-cyan-300">-</strong>
+              </div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex flex-wrap gap-1">
+              <button onclick="copyHeaderField('nospk')" class="flex-1 px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[10px] font-bold transition">📋 Copy Nomor</button>
+              <button onclick="copyHeaderField('tglspk')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition">Copy Tgl</button>
+              <button onclick="copyHeaderField('penyedia')" class="px-2 py-1 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[10px] font-bold transition">Copy UPB/PT</button>
+            </div>
+          </div>
+
+          <!-- KARTU 2: DOKUMEN BAST / REKAP KONDISI LHI -->
+          <div class="bg-slate-950/90 border border-blue-500/30 rounded-xl p-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">2. DOKUMEN BAST / LHI</span>
+                <span class="text-[10px] text-slate-400 font-semibold">Serah Terima / Ket</span>
+              </div>
+              <div id="info-nobast" class="mono text-xs font-bold text-blue-300 break-all mt-1">-</div>
+              <div class="text-[11px] text-slate-400 mt-1">
+                Tgl BAST/LHI: <strong id="info-tglbast" class="text-white mono">-</strong>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 truncate">
+                Keterangan: <strong id="info-ketbast" class="text-emerald-300 font-bold">-</strong>
+              </div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex flex-wrap gap-1">
+              <button onclick="copyHeaderField('nobast')" class="flex-1 px-2 py-1 rounded bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/30 text-[10px] font-bold transition">📋 Copy No. BAST</button>
+              <button onclick="copyHeaderField('tglbast')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition">Copy Tgl</button>
+              <button onclick="copyHeaderField('ketbast')" class="px-2 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold transition">Copy Ket</button>
+            </div>
+          </div>
+
+          <!-- KARTU 3: DOKUMEN SPV & SUB KEGIATAN -->
+          <div class="bg-slate-950/90 border border-purple-500/30 rounded-xl p-3 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-[10px] uppercase font-extrabold tracking-wider px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">3. DOKUMEN SPV & KEGIATAN</span>
+                <span class="text-[10px] text-emerald-400 font-semibold">Verifikasi</span>
+              </div>
+              <div id="info-nospv" class="mono text-xs font-bold text-purple-300 break-all mt-1">-</div>
+              <div class="text-[11px] text-slate-400 mt-1">
+                Tgl SPV: <strong id="info-tglspv" class="text-white mono">-</strong>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-1 truncate">
+                Sub Keg: <strong id="info-subkeg" class="text-amber-300">-</strong>
+              </div>
+            </div>
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex flex-wrap gap-1">
+              <button onclick="copyHeaderField('nospv')" class="flex-1 px-2 py-1 rounded bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/30 text-[10px] font-bold transition">📋 Copy No. SPV</button>
+              <button onclick="copyHeaderField('tglspv')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold transition">Copy Tgl</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KARTU 4: KARTU PEJABAT & PENGURUS BARANG (EDITABLE) -->
+        <div class="mt-2.5 bg-slate-950/95 border border-amber-500/40 rounded-xl p-3.5 shadow-lg">
+          <div class="flex items-center justify-between flex-wrap gap-2 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-extrabold tracking-wider px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                4. KARTU PEJABAT & TIM INVENTARISASI / PENGURUS BARANG (BISA DIEDIT)
+              </span>
+              <span class="text-[11px] text-slate-400">Otomatis dipakai pada form LHI, SPK, BAST & SPV</span>
+            </div>
+            <button onclick="resetPejabatDefault()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-bold border border-slate-700 transition">
+              🔄 Reset Default Disdikpora
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5">
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[10px] font-extrabold text-emerald-400 uppercase">A. Petugas 1 LKI / Pengurus Barang</label>
+                <button onclick="copyHeaderField('pengurus')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-[9px] font-bold">📋 Copy</button>
+              </div>
+              <input id="cfg-pengurus-nama" type="text" value="19830626 201409 1 001 - MA'RUF" oninput="refreshGeneratedScript()" class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded px-2 py-1 text-[11px] font-bold text-white mono outline-none mb-1" />
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] text-slate-400">Petugas 2 LKI:</span>
+                <input id="cfg-petugas2-nama" type="text" value="Ansyar Sutiadi, S.Sos., M.Si" oninput="refreshGeneratedScript()" class="flex-1 bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded px-2 py-0.5 text-[10px] font-semibold text-emerald-300 outline-none" />
+              </div>
+              <input id="cfg-pengurus-jabatan" type="hidden" value="Pengurus Barang" />
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5">
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[10px] font-extrabold text-cyan-400 uppercase">B. PPK / Pejabat Penatausahaan</label>
+                <button onclick="copyHeaderField('ppk')" class="px-1.5 py-0.5 rounded bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-[9px] font-bold">📋 Copy</button>
+              </div>
+              <input id="cfg-ppk-nip" type="text" value="197103122011012002 - HJ. AINUN KARLINAH, S.Pd" oninput="refreshGeneratedScript()" class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded px-2 py-1 text-[11px] font-bold text-white mono outline-none mb-1" />
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] text-slate-400">Nama PPK:</span>
+                <input id="cfg-ppk-nama" type="text" value="HJ. AINUN KARLINAH, S.Pd" oninput="refreshGeneratedScript()" class="flex-1 bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded px-2 py-0.5 text-[10px] font-semibold text-cyan-300 outline-none" />
+              </div>
+            </div>
+
+            <div class="bg-slate-900/90 border border-slate-800 rounded-lg p-2.5">
+              <div class="flex items-center justify-between mb-1">
+                <label class="text-[10px] font-extrabold text-amber-400 uppercase">C. Pengguna Barang / Kepala Dinas</label>
+                <button onclick="copyHeaderField('kadis')" class="px-1.5 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[9px] font-bold">📋 Copy</button>
+              </div>
+              <input id="cfg-kadis-nama" type="text" value="ANWAR, S.Pd., M.Pd" oninput="refreshGeneratedScript()" class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded px-2 py-1 text-[11px] font-bold text-white mono outline-none mb-1" />
+              <div class="flex items-center gap-1">
+                <span class="text-[10px] text-slate-400">Jabatan:</span>
+                <input id="cfg-kadis-jabatan" type="text" value="Kepala Dinas Pendidikan, Pemuda dan Olahraga" oninput="refreshGeneratedScript()" class="flex-1 bg-slate-950 border border-slate-700 focus:border-amber-400 rounded px-2 py-0.5 text-[10px] font-semibold text-amber-300 outline-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABEL RINCIAN BARANG (MENDUKUNG FORMAT LHI & FORMAT PENGADAAN SPK) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex-1 flex flex-col">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h3 class="font-bold text-sm text-white flex items-center gap-2">
+              <span>📊 Daftar Baris Data Kertas Kerja / LHI</span>
+              <span id="table-mode-badge" class="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-extrabold border border-cyan-500/30">MODE LHI / PENGADAAN</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Gunakan rentang baris jika ingin mengeksekusi sebagian data saja</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="search-rincian" type="text" oninput="filterRincianTable()" placeholder="🔍 Cari kode, NUP, barang, kondisi..." class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white outline-none focus:border-cyan-400" />
+          </div>
+        </div>
+
+        <div class="overflow-x-auto max-h-[380px] overflow-y-auto border border-slate-800 rounded-xl">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-950 sticky top-0 z-10 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th class="py-2.5 px-2.5">No</th>
+                <th class="py-2.5 px-2.5">Kode Barang & NIBAR</th>
+                <th class="py-2.5 px-2.5">Nama Barang & Spesifikasi/Ket</th>
+                <th class="py-2.5 px-2.5 text-center">Tahun & Keberadaan</th>
+                <th class="py-2.5 px-2.5 text-center">Vol / Sat</th>
+                <th class="py-2.5 px-2.5 text-right">Harga Satuan</th>
+                <th class="py-2.5 px-2.5 text-right">Total Nilai</th>
+              </tr>
+            </thead>
+            <tbody id="rincian-tbody" class="divide-y divide-slate-800/60"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KOLOM KANAN (5 KOLOM): GENERATOR SCRIPT 5 MODE (TERMASUK KHUSUS LHI) -->
+    <div class="lg:col-span-5 flex flex-col gap-5">
+      <div class="bg-slate-900 border-2 border-cyan-500/40 rounded-2xl p-5 shadow-2xl flex-1 flex flex-col">
+
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center">2</span>
+            <h2 class="font-extrabold text-sm md:text-base text-white">Pilih Mode Robot Otomatisasi E-BMD</h2>
+          </div>
+          <span id="script-summary-badge" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            0 Baris
+          </span>
+        </div>
+
+        <!-- 5 TOMBOL MODE SCRIPT (TERMASUK MODE LHI BARU) -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1.5 bg-slate-950 rounded-xl border border-slate-800 mb-3">
+          <button id="tab-mode-lhi" onclick="switchScriptMode('LHI')" class="py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg text-center">
+            <span>📋 1. INPUT LHI</span>
+            <span class="text-[9px] font-normal opacity-95">Inventarisasi 2025</span>
+          </button>
+          <button id="tab-mode-autopilot" onclick="switchScriptMode('AUTOPILOT')" class="py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-rose-300 hover:bg-slate-800 border border-rose-500/30 text-center">
+            <span>🤖 2. MASTER PILOT</span>
+            <span class="text-[9px] font-normal opacity-80">Antrian SPK+BAST</span>
+          </button>
+          <button id="tab-mode-spk" onclick="switchScriptMode('SPK')" class="py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-emerald-300 hover:bg-slate-800 border border-emerald-500/30 text-center">
+            <span>📦 3. RINCIAN SPK</span>
+            <span class="text-[9px] font-normal opacity-80">Tembak Barang</span>
+          </button>
+          <button id="tab-mode-header" onclick="switchScriptMode('HEADER')" class="py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-purple-300 hover:bg-slate-800 border border-purple-500/30 text-center">
+            <span>📝 4. FORM HEADER</span>
+            <span class="text-[9px] font-normal opacity-80">Header SPK/BAST</span>
+          </button>
+          <button id="tab-mode-bast" onclick="switchScriptMode('BAST')" class="py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-amber-300 hover:bg-slate-800 border border-amber-500/30 text-center">
+            <span>🪑 5. RINCIAN BAST</span>
+            <span class="text-[9px] font-normal opacity-80">Mobiler & Buku</span>
+          </button>
+        </div>
+
+        <!-- PENGATURAN RENTANG BARIS, SATUAN & KONDISI LHI -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3 bg-slate-950/90 p-3 rounded-xl border border-slate-800 text-xs">
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Mulai Baris</label>
+            <input id="cfg-start-row" type="number" min="1" value="1" oninput="refreshGeneratedScript()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold mono" />
+          </div>
+          <div>
+            <label class="text-[10px] text-slate-400 font-bold uppercase block mb-1">Sampai Baris</label>
+            <input id="cfg-end-row" type="number" min="1" value="10" oninput="refreshGeneratedScript()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white font-bold mono" />
+          </div>
+          <div>
+            <label class="text-[10px] text-emerald-400 font-bold uppercase block mb-1">Satuan Default</label>
+            <select id="cfg-satuan" onchange="refreshGeneratedScript()" class="w-full bg-slate-900 border border-emerald-500/40 rounded-lg px-2 py-1.5 text-emerald-300 font-bold">
+              <option value="AUTO">Otomatis (Pcs/Unit/Eks)</option>
+              <option value="Pcs">Pcs (Khusus Mobiler)</option>
+              <option value="Unit">Unit (Peralatan)</option>
+              <option value="Buah">Buah</option>
+              <option value="Set">Set</option>
+              <option value="Eksemplar">Eksemplar (Buku)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-cyan-400 font-bold uppercase block mb-1">Default Kondisi LHI</label>
+            <select id="cfg-kondisi-lhi" onchange="refreshGeneratedScript()" class="w-full bg-slate-900 border border-cyan-500/40 rounded-lg px-2 py-1.5 text-cyan-300 font-bold">
+              <option value="AUTO">Sesuai Excel (B/KB/RB)</option>
+              <option value="Baik">Baik (B)</option>
+              <option value="Kurang Baik">Kurang Baik (KB)</option>
+              <option value="Rusak Berat">Rusak Berat (RB)</option>
+            </select>
+          </div>
+          <input id="cfg-sumber" type="hidden" value="AUTO" />
+          <input id="cfg-pengarang" type="hidden" value="Intan Pariwara" />
+        </div>
+
+        <!-- TOMBOL UTAMA COPY SCRIPT -->
+        <button id="main-copy-btn" onclick="copyActiveScript()" class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3">
+          <span>📋</span>
+          <span id="main-copy-btn-text">COPY ROBOT INPUT LHI (INVENTARISASI BMD)</span>
+        </button>
+
+        <!-- PANDUAN SINGKAT SESUAI MODE -->
+        <div id="mode-helper-box" class="bg-slate-950/90 border border-slate-800 rounded-xl p-3 mb-3 text-xs text-slate-300 space-y-1">
+          <div class="font-bold text-cyan-400">Cara Pakai ROBOT LKI / LHI PINTU 1 (`LHI DISDIKBUD 2025 10.xlsx`):</div>
+          <p>1. Upload file <b>LHI DISDIKBUD 2025 10.xlsx</b> di kotak sebelah kiri, lalu klik tombol biru <b>COPY ROBOT INPUT LHI</b> di atas.</p>
+          <p>2. Buka halaman <b>LEMBAR KERJA INVENTARISASI PERALATAN DAN MESIN</b> (Daftar LKI atau Form Tambah 1), tekan <b>F12 (Console)</b>, Paste (Ctrl+V) lalu Enter.</p>
+          <p>3. Klik <b>🚀 JALANKAN AUTO-PILOT LKI</b>: Robot otomatis klik <b>+ Tambah Baru ➔ Pilih Tahun, Jenis, Kode Barang, NIBAR & Nama Barang ➔ Set Keberadaan (Jika Tidak Ditemukan: centang Tidak + Tidak Ditemukan + isi angka 1) ➔ Centang TIDAK untuk No. Polisi/Rangka/Mesin/BPKB ➔ Pilih Petugas 1 (MA'RUF) & Petugas 2 (Ansyar Sutiadi, S.Sos., M.Si) ➔ Simpan & Ulangi!</b></p>
+        </div>
+
+        <!-- TEXTAREA PREVIEW SCRIPT -->
+        <div class="flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-1">
+            <span id="script-box-label" class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Preview Script Console (100% Siap Paste di F12):</span>
+            <span class="text-[10px] text-emerald-400 font-semibold">Anti-Hilang Saat Pindah Halaman</span>
+          </div>
+          <textarea id="generated-script-box" readonly class="w-full flex-1 min-h-[250px] bg-slate-950 border border-slate-800 rounded-xl p-3 mono text-[11px] text-cyan-300 outline-none resize-none"></textarea>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    let schoolsData = [];
+    let currentSchoolIndex = 0;
+    let currentScriptMode = 'LHI'; // Default langsung ke 'LHI' sesuai permintaan user
+    let activeCategoryPreset = 'ALL';
+
+    // DATA BAWAAN (TERMASUK DATA LHI DISDIKBUD 2025 10 + MOBILER + BUKU)
+    const defaultSchools = [
+      {
+        namaSekolah: "LHI DISDIKBUD 2025 10 (LEMBAR KERJA INVENTARISASI)",
+        kecamatan: "DINAS PENDIDIKAN, PEMUDA DAN OLAHRAGA",
+        noSpk: "LHI/10/DISDIKBUD-ASET/2025",
+        tglSpk: "31-10-2025",
+        noBast: "BA-LHI/10/DISDIKBUD/2025",
+        tglBast: "31-10-2025",
+        ketBast: "Pengadaan Chromebook Bidang SD",
+        noSpv: "SPV-LHI/10/DISDIKBUD/2025",
+        tglSpv: "31-10-2025",
+        penyedia: "Dinas Pendidikan, Pemuda dan Olahraga",
+        subKegiatan: "Lembar Kerja Inventarisasi Peralatan dan Mesin",
+        rekeningBelanja: "1.3.2 - PERALATAN DAN MESIN",
+        defaultSatuan: "Unit",
+        kategori: "LHI",
+        rows: [
+          { no: 1, kode: "1.3.2.10.01.02.002", nibar: "120172030100000000002024132100102002000289", nup: "289", merk: "LAPTOP", tahun: "2024", kondisi: "Baik", statusAda: "Ada", judul: "Lap Top", pengarang: "MA'RUF", jumlah: 1, satuan: "Unit", harga: 5911111, total: 5911111, ket: "Pengadaan Chromebook Bidang SD" },
+          { no: 2, kode: "1.3.2.06.01.02.143", nibar: "120172030100000000002024132060102143000019", nup: "19", merk: "LAPTOP", tahun: "2024", kondisi: "Baik", statusAda: "Ada", judul: "Connectors", pengarang: "MA'RUF", jumlah: 1, satuan: "Unit", harga: 358613, total: 358613, ket: "Pengadaan Chromebook Bidang SD" },
+          { no: 3, kode: "1.3.2.06.01.02.143", nibar: "120172030100000000002024132060102143000018", nup: "18", merk: "LAPTOP", tahun: "2024", kondisi: "Baik", statusAda: "Tidak Ditemukan", judul: "Connectors", pengarang: "MA'RUF", jumlah: 1, satuan: "Unit", harga: 358613, total: 358613, ket: "Pengadaan Chromebook Bidang SD" }
+        ]
+      },
+      {
+        namaSekolah: "SMP NEGERI 1 LABUAN",
+        kecamatan: "KECAMATAN LABUAN",
+        noSpk: "EP-01KVW7EN555BEH1DDR62F29D0X.1",
+        tglSpk: "29-06-2026",
+        noBast: "12.A/027/DISDIKPORA-ASET/2026",
+        tglBast: "17-09-2026",
+        ketBast: "DAU PENDIDIKAN",
+        noSpv: "SPV/3840/BOSP/DISDIKPORA/2026",
+        tglSpv: "17-09-2025",
+        penyedia: "PT. INTERNASIONAL KREASI NUSANTARA",
+        subKegiatan: "1.01.02.2.02.0025 - Pengadaan Mebel Sekolah",
+        rekeningBelanja: "5.2.02.88.088.08888 - Belanja Modal Peralatan dan Mesin BOS",
+        defaultSatuan: "Pcs",
+        kategori: "MOBILER",
+        rows: [
+          { no: 1, kode: "1.3.2.05.02.01.023", nup: "1", merk: "Meubelair", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Meja Sekolah", pengarang: "-", jumlah: 33, satuan: "Pcs", harga: 1487900, total: 49100700, ket: "DAU PENDIDIKAN" },
+          { no: 2, kode: "1.3.2.05.02.01.034", nup: "2", merk: "Meubelair", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Bangku Sekolah", pengarang: "-", jumlah: 33, satuan: "Pcs", harga: 1140200, total: 37626600, ket: "DAU PENDIDIKAN" }
+        ]
+      },
+      {
+        namaSekolah: "SMPN SATAP 2 BALAESANG TANJUNG",
+        kecamatan: "KECAMATAN BALAESANG TANJUNG",
+        noSpk: "SP/01/SMPNSATAP2BALAESANGTANJUNG/BOSP-TAHAPI/2026",
+        tglSpk: "12-03-2026",
+        noBast: "BAST/01/SMPNSATAP2BALAESANGTANJUNG/2026",
+        tglBast: "20-03-2026",
+        ketBast: "BOS TAHAP I",
+        noSpv: "SPV/01/SMPNSATAP2BALAESANGTANJUNG/2026",
+        tglSpv: "25-03-2026",
+        penyedia: "SIPLAH",
+        subKegiatan: "1.01.02.2.02.0006 - Pengelolaan Dana BOS Sekolah Menengah Pertama",
+        rekeningBelanja: "5.2.02.88.088.08888 - Belanja Modal Peralatan dan Mesin BOS",
+        defaultSatuan: "Unit",
+        kategori: "PERALATAN",
+        rows: [
+          { no: 1, kode: "1.3.2.10.02.03.004", nup: "1", merk: "Peralatan", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Peralatan Komputer Mainframe / Server / Jaringan", pengarang: "-", jumlah: 1, satuan: "Unit", harga: 6000000, total: 6000000, ket: "BOS TAHAP I" },
+          { no: 2, kode: "1.3.2.10.02.03.003", nup: "2", merk: "Epson", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Printer Berwarna Multifungsi", pengarang: "-", jumlah: 1, satuan: "Unit", harga: 3500000, total: 3500000, ket: "BOS TAHAP I" }
+        ]
+      },
+      {
+        namaSekolah: "SDN 4 SOJOL UTARA",
+        kecamatan: "KECAMATAN SOJOL UTARA",
+        noSpk: "01.A/SPB.BOS-SD/SDN4SU/II/2026",
+        tglSpk: "03-02-2026",
+        noBast: "02.A/BAST.BOS-SD/SDN4SU/III/2026",
+        tglBast: "10-03-2026",
+        ketBast: "BOS REGULER TAHAP I",
+        noSpv: "SPV/104/BOSP/DISDIKPORA/2026",
+        tglSpv: "15-03-2026",
+        penyedia: "SIPLAH",
+        subKegiatan: "1.01.02.2.01.0029 - Pengelolaan Dana BOS Sekolah Dasar",
+        rekeningBelanja: "5.2.05.88.088.08888 - Belanja Modal Aset Tetap Lainnya BOS",
+        defaultSatuan: "Eksemplar",
+        kategori: "BUKU",
+        rows: [
+          { no: 1, kode: "1.3.5.01.01.08.999", nup: "1", merk: "Intan Pariwara", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Buku Panduan Guru Pendidikan Jasmani, Olahraga, dan Kesehatan untuk SD/MI Kelas I", pengarang: "Intan Pariwara", jumlah: 1, satuan: "Eksemplar", harga: 112600, total: 112600, ket: "BOS" },
+          { no: 2, kode: "1.3.5.01.01.04.999", nup: "2", merk: "Intan Pariwara", tahun: "2026", kondisi: "Baik", statusAda: "Ada", judul: "Bahasa Indonesia: Aku Bisa! untuk SD/MI Kelas I (Edisi Revisi)", pengarang: "Intan Pariwara", jumlah: 2, satuan: "Eksemplar", harga: 102000, total: 204000, ket: "BOS" }
+        ]
+      }
+    ];
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      t.classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => t.classList.add('hidden'), 2600);
+    }
+
+    function safeCopyText(text, successMsg) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+          showToast(successMsg || 'Berhasil disalin ke Clipboard!');
+          return;
+        }
+      } catch (e) {}
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(successMsg || 'Berhasil disalin ke Clipboard!');
+        }).catch(() => {
+          showToast('Silakan klik di kotak script lalu tekan Ctrl+A dan Ctrl+C');
+        });
+      }
+    }
+
+    function formatRupiah(num) {
+      return Number(num || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function cleanNumber(val) {
+      if (typeof val === 'number') return Math.round(val);
+      if (!val) return 0;
+      let s = String(val).trim().replace(/Rp\.?\s*/gi, '');
+      if (s.includes(',') && s.includes('.')) {
+        s = s.replace(/\./g, '').split(',')[0];
+      } else if (s.includes(',')) {
+        const parts = s.split(',');
+        if (parts[parts.length - 1].length <= 2) s = parts[0];
+        else s = s.replace(/,/g, '');
+      } else if (s.includes('.')) {
+        const parts = s.split('.');
+        if (parts.length === 2 && parts[1].length <= 2) s = parts[0];
+        else s = s.replace(/\./g, '');
+      }
+      const n = parseInt(s.replace(/[^0-9-]/g, ''), 10);
+      return isNaN(n) ? 0 : n;
+    }
+
+    function normalizeDateString(raw) {
+      if (!raw) return '31-10-2025';
+      if (typeof raw === 'number' && raw > 20000 && raw < 60000) {
+        const d = new Date(Math.round((raw - 25569) * 86400 * 1000));
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const yyyy = d.getUTCFullYear();
+        return `${dd}-${mm}-${yyyy}`;
+      }
+      const s = String(raw).trim();
+      const mIso = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+      if (mIso) return `${mIso[3].padStart(2, '0')}-${mIso[2].padStart(2, '0')}-${mIso[1]}`;
+      const mId = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (mId) return `${mId[1].padStart(2, '0')}-${mId[2].padStart(2, '0')}-${mId[3]}`;
+      return s;
+    }
+
+    function normalizeKondisi(raw) {
+      const s = String(raw || '').trim().toUpperCase();
+      if (!s || s === 'B' || s.includes('BAIK') && !s.includes('KURANG')) return 'Baik';
+      if (s === 'KB' || s === 'RR' || s.includes('KURANG') || s.includes('RINGAN')) return 'Kurang Baik';
+      if (s === 'RB' || s.includes('BERAT') || s.includes('RUSAK')) return 'Rusak Berat';
+      return 'Baik';
+    }
+
+    function setCategoryPreset(preset) {
+      activeCategoryPreset = preset;
+      const btnAll = document.getElementById('preset-all');
+      const btnLhi = document.getElementById('preset-lhi');
+      const btnMob = document.getElementById('preset-mobiler');
+      const btnBuku = document.getElementById('preset-buku');
+
+      btnAll.className = 'py-2 px-2.5 rounded-xl font-bold text-xs border border-slate-700 bg-slate-800/70 text-slate-300 hover:bg-slate-700 transition flex items-center justify-center gap-1';
+      btnLhi.className = 'py-2 px-2.5 rounded-xl font-bold text-xs border border-cyan-500/30 bg-cyan-500/10 text-cyan-300 hover:bg-cyan-500/20 transition flex items-center justify-center gap-1';
+      btnMob.className = 'py-2 px-2.5 rounded-xl font-bold text-xs border border-blue-500/30 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 transition flex items-center justify-center gap-1';
+      btnBuku.className = 'py-2 px-2.5 rounded-xl font-bold text-xs border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition flex items-center justify-center gap-1';
+
+      if (preset === 'ALL') {
+        btnAll.className = 'py-2 px-2.5 rounded-xl font-extrabold text-xs border border-emerald-500 bg-emerald-500/20 text-emerald-300 transition flex items-center justify-center gap-1 shadow-md';
+      } else if (preset === 'LHI') {
+        btnLhi.className = 'py-2 px-2.5 rounded-xl font-extrabold text-xs border border-cyan-400 bg-cyan-500/30 text-white transition flex items-center justify-center gap-1 shadow-md';
+        switchScriptMode('LHI');
+      } else if (preset === 'MOBILER') {
+        btnMob.className = 'py-2 px-2.5 rounded-xl font-extrabold text-xs border border-blue-400 bg-blue-500/30 text-white transition flex items-center justify-center gap-1 shadow-md';
+        document.getElementById('cfg-satuan').value = 'Pcs';
+      } else if (preset === 'BUKU') {
+        btnBuku.className = 'py-2 px-2.5 rounded-xl font-extrabold text-xs border border-amber-400 bg-amber-500/30 text-white transition flex items-center justify-center gap-1 shadow-md';
+        document.getElementById('cfg-satuan').value = 'Eksemplar';
+      }
+      filterSchoolList();
+    }
+
+    function filterSchoolList() {
+      const q = (document.getElementById('school-search-input').value || '').trim().toLowerCase();
+      const clearBtn = document.getElementById('clear-search-btn');
+      if (clearBtn) clearBtn.classList.toggle('hidden', q.length === 0);
+
+      const sel = document.getElementById('school-selector');
+      sel.innerHTML = '';
+      let matchedIndices = [];
+
+      schoolsData.forEach((s, idx) => {
+        if (activeCategoryPreset === 'LHI' && s.kategori !== 'LHI') return;
+        if (activeCategoryPreset === 'MOBILER' && s.kategori !== 'MOBILER' && !s.rows.some(r => r.kode.startsWith('1.3.2.05'))) return;
+        if (activeCategoryPreset === 'BUKU' && s.kategori !== 'BUKU' && !s.rows.some(r => r.kode.startsWith('1.3.5'))) return;
+
+        const hay = `${s.namaSekolah} ${s.kecamatan} ${s.noSpk} ${s.noBast} ${s.noSpv} ${s.penyedia} ${s.kategori || ''}`.toLowerCase();
+        if (!q || hay.includes(q)) {
+          matchedIndices.push(idx);
+          const totalRp = s.rows.reduce((acc, r) => acc + (r.total || r.jumlah * r.harga), 0);
+          const opt = document.createElement('option');
+          opt.value = idx;
+          const prefixTag = s.kategori === 'LHI' ? '[LHI] ' : '';
+          opt.textContent = `${idx + 1}. ${prefixTag}${s.namaSekolah} (${s.rows.length} Baris | Rp ${formatRupiah(totalRp)})`;
+          sel.appendChild(opt);
+        }
+      });
+
+      const info = document.getElementById('search-match-info');
+      if (matchedIndices.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = -1;
+        opt.textContent = '-- Tidak ada data yang cocok --';
+        sel.appendChild(opt);
+        info.textContent = '0 hasil cocok';
+      } else {
+        info.textContent = `${matchedIndices.length} dari ${schoolsData.length} paket ditampilkan`;
+        const targetIdx = matchedIndices.includes(currentSchoolIndex) ? currentSchoolIndex : matchedIndices[0];
+        sel.value = targetIdx;
+        selectSchool(targetIdx, true);
+      }
+    }
+
+    function clearSchoolSearch() {
+      document.getElementById('school-search-input').value = '';
+      filterSchoolList();
+    }
+
+    function selectSchool(index, skipSelectorUpdate) {
+      const idx = parseInt(index, 10);
+      if (isNaN(idx) || idx < 0 || idx >= schoolsData.length) return;
+      currentSchoolIndex = idx;
+      const school = schoolsData[idx];
+      if (!skipSelectorUpdate) {
+        document.getElementById('school-selector').value = idx;
+      }
+
+      const totalRp = school.rows.reduce((acc, r) => acc + (r.total || r.jumlah * r.harga), 0);
+      const isLhi = school.kategori === 'LHI';
+      const isMobiler = school.kategori === 'MOBILER' || school.rows.some(r => r.kode.startsWith('1.3.2.05'));
+      const isPeralatan = !isLhi && (school.kategori === 'PERALATAN' || school.rows.some(r => r.kode.startsWith('1.3.2')));
+
+      document.getElementById('card1-title').innerText = isLhi ? '1. DOKUMEN LHI (INVENTARISASI)' : '1. DOKUMEN SPK / PESANAN';
+      document.getElementById('info-nospk').innerText = school.noSpk || '-';
+      document.getElementById('info-tglspk').innerText = school.tglSpk || '-';
+      document.getElementById('info-totalrp').innerText = 'Rp ' + formatRupiah(totalRp);
+      document.getElementById('info-penyedia').innerText = school.penyedia || 'DISDIKBUD';
+
+      document.getElementById('info-nobast').innerText = school.noBast || '-';
+      document.getElementById('info-tglbast').innerText = school.tglBast || '-';
+      document.getElementById('info-ketbast').innerText = school.ketBast || (isLhi ? 'LHI DISDIKBUD 2025' : 'DAU PENDIDIKAN');
+      document.getElementById('info-nospv').innerText = school.noSpv || '-';
+      document.getElementById('info-tglspv').innerText = school.tglSpv || '-';
+      document.getElementById('info-subkeg').innerText = school.subKegiatan || '-';
+
+      const badge = document.getElementById('info-kib-badge');
+      const tblBadge = document.getElementById('table-mode-badge');
+      if (isLhi) {
+        badge.innerText = 'LHI INVENTARISASI';
+        badge.className = 'text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+        tblBadge.innerText = 'MODE LHI (KODE, NUP, KONDISI B/KB/RB)';
+      } else if (isMobiler) {
+        badge.innerText = 'MOBILER 1.3.2 (Pcs)';
+        badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30';
+        tblBadge.innerText = 'MODE PENGADAAN MOBILER';
+      } else if (isPeralatan) {
+        badge.innerText = 'PERALATAN 1.3.2 (Unit)';
+        badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+        tblBadge.innerText = 'MODE PENGADAAN PERALATAN';
+      } else {
+        badge.innerText = 'BUKU 1.3.5 (Eks)';
+        badge.className = 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        tblBadge.innerText = 'MODE PENGADAAN BUKU';
+      }
+
+      document.getElementById('cfg-start-row').value = 1;
+      document.getElementById('cfg-end-row').value = school.rows.length;
+
+      renderTables(school);
+      refreshGeneratedScript();
+    }
+
+    function renderTables(school) {
+      const tbody = document.getElementById('rincian-tbody');
+      tbody.innerHTML = '';
+      school.rows.forEach(r => {
+        const subTotal = r.total || (r.jumlah * r.harga);
+        const statusStr = String(r.statusAda || 'Ada');
+        const isNotFound = /tidak|hilang/i.test(statusStr);
+        const statusBadge = isNotFound
+          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        const tr = document.createElement('tr');
+        tr.className = 'rincian-row hover:bg-slate-800/50 transition';
+        tr.innerHTML = `
+          <td class="py-2 px-2.5 font-bold text-slate-400 mono">${r.no}</td>
+          <td class="py-2 px-2.5">
+            <div class="mono font-semibold text-emerald-300">${r.kode}</div>
+            <div class="text-[10px] text-cyan-300 mono break-all">${r.nibar ? 'NIBAR: ' + r.nibar : ('NUP/Reg: ' + (r.nup || '1'))}</div>
+          </td>
+          <td class="py-2 px-2.5 text-slate-200">
+            <div class="font-semibold">${r.judul}</div>
+            <div class="text-[10px] text-slate-400">${r.merk && r.merk !== '-' ? '[' + r.merk + '] ' : ''}${r.ket ? '• ' + r.ket : ''}</div>
+          </td>
+          <td class="py-2 px-2.5 text-center">
+            <div class="text-[10px] font-bold text-slate-300 mono mb-0.5">${r.tahun || '2024'}</div>
+            <span class="px-1.5 py-0.5 rounded border text-[9px] font-bold ${statusBadge}">${isNotFound ? '❌ Tidak Ditemukan (1)' : '✅ Ada (' + (r.kondisi || 'Baik') + ')'}</span>
+          </td>
+          <td class="py-2 px-2.5 text-center font-bold text-amber-300 mono">${r.jumlah} <span class="text-[10px] font-normal text-slate-400">${r.satuan || school.defaultSatuan || 'Unit'}</span></td>
+          <td class="py-2 px-2.5 text-right mono text-slate-200">${formatRupiah(r.harga)}</td>
+          <td class="py-2 px-2.5 text-right mono font-bold text-emerald-400">${formatRupiah(subTotal)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterRincianTable() {
+      const q = (document.getElementById('search-rincian').value || '').toLowerCase();
+      document.querySelectorAll('#rincian-tbody .rincian-row').forEach(tr => {
+        tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    }
+
+    function resetPejabatDefault() {
+      document.getElementById('cfg-pengurus-nama').value = "19830626 201409 1 001 - MA'RUF";
+      if (document.getElementById('cfg-petugas2-nama')) {
+        document.getElementById('cfg-petugas2-nama').value = "Ansyar Sutiadi, S.Sos., M.Si";
+      }
+      document.getElementById('cfg-pengurus-jabatan').value = "Pengurus Barang";
+      document.getElementById('cfg-ppk-nip').value = "197103122011012002 - HJ. AINUN KARLINAH, S.Pd";
+      document.getElementById('cfg-ppk-nama').value = "HJ. AINUN KARLINAH, S.Pd";
+      document.getElementById('cfg-kadis-nama').value = "ANWAR, S.Pd., M.Pd";
+      document.getElementById('cfg-kadis-jabatan').value = "Kepala Dinas Pendidikan, Pemuda dan Olahraga";
+      refreshGeneratedScript();
+      showToast('Data Petugas LKI & Pejabat direset ke Default Disdikpora!');
+    }
+
+    function copyHeaderField(type) {
+      const s = schoolsData[currentSchoolIndex];
+      if (!s) return;
+      let val = '';
+      let label = '';
+      if (type === 'nospk') { val = s.noSpk; label = 'Nomor Dokumen'; }
+      else if (type === 'tglspk') { val = s.tglSpk; label = 'Tanggal Dokumen'; }
+      else if (type === 'penyedia') { val = s.penyedia || 'SIPLAH'; label = 'UPB / Pihak Penyedia'; }
+      else if (type === 'nobast') { val = s.noBast; label = 'Nomor BAST/LHI'; }
+      else if (type === 'tglbast') { val = s.tglBast; label = 'Tanggal BAST/LHI'; }
+      else if (type === 'ketbast') { val = s.ketBast || 'LHI DISDIKBUD 2025'; label = 'Keterangan'; }
+      else if (type === 'nospv') { val = s.noSpv; label = 'Nomor SPV'; }
+      else if (type === 'tglspv') { val = s.tglSpv; label = 'Tanggal SPV'; }
+      else if (type === 'pengurus') { val = document.getElementById('cfg-pengurus-nama').value; label = 'Pengurus Barang'; }
+      else if (type === 'ppk') { val = document.getElementById('cfg-ppk-nip').value; label = 'PPK / Pejabat Penatausahaan'; }
+      else if (type === 'kadis') { val = document.getElementById('cfg-kadis-nama').value; label = 'Pengguna Barang / Kepala Dinas'; }
+      safeCopyText(val, `${label} disalin: ${val}`);
+    }
+
+    function switchScriptMode(mode) {
+      currentScriptMode = (['LHI', 'AUTOPILOT', 'SPK', 'HEADER', 'BAST'].includes(mode)) ? mode : 'LHI';
+      const btnLhi = document.getElementById('tab-mode-lhi');
+      const btnAuto = document.getElementById('tab-mode-autopilot');
+      const btnSpk = document.getElementById('tab-mode-spk');
+      const btnHdr = document.getElementById('tab-mode-header');
+      const btnBast = document.getElementById('tab-mode-bast');
+      const mainBtn = document.getElementById('main-copy-btn');
+      const mainBtnTxt = document.getElementById('main-copy-btn-text');
+      const helperBox = document.getElementById('mode-helper-box');
+
+      btnLhi.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-cyan-300 hover:bg-slate-800 border border-cyan-500/30 text-center';
+      btnAuto.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-rose-300 hover:bg-slate-800 border border-rose-500/30 text-center';
+      btnSpk.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-emerald-300 hover:bg-slate-800 border border-emerald-500/30 text-center';
+      btnHdr.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-purple-300 hover:bg-slate-800 border border-purple-500/30 text-center';
+      btnBast.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-slate-900 text-amber-300 hover:bg-slate-800 border border-amber-500/30 text-center';
+
+      if (currentScriptMode === 'LHI') {
+        btnLhi.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg text-center';
+        mainBtn.className = 'w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3';
+        mainBtnTxt.innerText = 'COPY ROBOT INPUT LHI (INVENTARISASI BMD 2025/2026)';
+        helperBox.innerHTML = `
+          <div class="font-bold text-cyan-400">Cara Pakai ROBOT INPUT LHI (\`LHI DISDIKBUD 2025 10.xlsx\`):</div>
+          <p>1. Upload file <b>LHI DISDIKBUD 2025 10.xlsx</b> di kotak sebelah kiri, lalu klik tombol biru <b>COPY ROBOT INPUT LHI</b> di atas.</p>
+          <p>2. Buka halaman <b>Inventarisasi / Hasil Inventarisasi (LHI)</b> di E-BMD Donggala, tekan <b>F12 (Console)</b>, Paste lalu Enter.</p>
+          <p>3. Panel Robot LHI dapat melakukan: <b>Pilih UPB/Sekolah ➔ Isi Header LHI ➔ Pilih Barang (Kode/NUP) ➔ Set Kondisi (Baik / Kurang Baik / Rusak Berat) & Status Ada/Tidak Ada ➔ Tembak Semua Baris LHI!</b></p>
+        `;
+      } else if (currentScriptMode === 'AUTOPILOT') {
+        btnAuto.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-gradient-to-r from-rose-600 to-orange-600 text-white shadow-lg text-center';
+        mainBtn.className = 'w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3';
+        mainBtnTxt.innerText = 'COPY MASTER AUTO-PILOT (PENGADAAN SPK + BAST + SPV)';
+        helperBox.innerHTML = `
+          <div class="font-bold text-rose-400">Cara Pakai MASTER AUTO-PILOT (Pengadaan SPK s/d BAST):</div>
+          <p>1. Buka halaman awal <b>Pengadaan Barang (spkasettetap)</b>, Paste script ini sekali saja di Console (F12).</p>
+          <p>2. Otomatis <b>Pilih Sekolah ➔ Tambah SPK ➔ Isi Header ➔ Pilih Rekening ➔ Tembak Rincian SPK ➔ Klik [+] Hijau ➔ Isi BAST & SPV ➔ Rincian Barang BAST!</b></p>
+        `;
+      } else if (currentScriptMode === 'SPK') {
+        btnSpk.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-emerald-500 text-slate-950 shadow-lg text-center';
+        mainBtn.className = 'w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3';
+        mainBtnTxt.innerText = 'COPY KODE RINCIAN SPK (TEMBAK BARANG)';
+      } else if (currentScriptMode === 'HEADER') {
+        btnHdr.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-purple-500 text-white shadow-lg text-center';
+        mainBtn.className = 'w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3';
+        mainBtnTxt.innerText = 'COPY KODE AUTO-ISI HEADER SPK, BAST & SPV';
+      } else {
+        btnBast.className = 'py-2 px-2 rounded-lg font-extrabold text-[11px] transition flex flex-col items-center justify-center gap-0.5 bg-amber-500 text-slate-950 shadow-lg text-center';
+        mainBtn.className = 'w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-extrabold text-sm shadow-lg transition flex items-center justify-center gap-2 mb-3';
+        mainBtnTxt.innerText = 'COPY KODE RINCIAN BAST (MOBILER & BUKU)';
+      }
+
+      refreshGeneratedScript();
+    }
+
+    function getPejabatConfig() {
+      return {
+        pengurusNama: (document.getElementById('cfg-pengurus-nama')?.value || "19830626 201409 1 001 - MA'RUF").trim(),
+        petugas2Nama: (document.getElementById('cfg-petugas2-nama')?.value || "Ansyar Sutiadi, S.Sos., M.Si").trim(),
+        pengurusJabatan: (document.getElementById('cfg-pengurus-jabatan')?.value || "Pengurus Barang").trim(),
+        ppkNip: (document.getElementById('cfg-ppk-nip')?.value || "197103122011012002 - HJ. AINUN KARLINAH, S.Pd").trim(),
+        ppkNama: (document.getElementById('cfg-ppk-nama')?.value || "HJ. AINUN KARLINAH, S.Pd").trim(),
+        kadisNama: (document.getElementById('cfg-kadis-nama')?.value || "ANWAR, S.Pd., M.Pd").trim(),
+        kadisJabatan: (document.getElementById('cfg-kadis-jabatan')?.value || "Kepala Dinas Pendidikan, Pemuda dan Olahraga").trim()
+      };
+    }
+
+    function refreshGeneratedScript() {
+      const school = schoolsData[currentSchoolIndex];
+      if (!school) return;
+
+      const startRow = Math.max(1, parseInt(document.getElementById('cfg-start-row').value || '1', 10));
+      const endRow = Math.min(school.rows.length, parseInt(document.getElementById('cfg-end-row').value || String(school.rows.length), 10));
+      const selectedRows = school.rows.filter(r => r.no >= startRow && r.no <= endRow);
+
+      const satuanOverride = document.getElementById('cfg-satuan').value || 'AUTO';
+      const kondisiOverride = document.getElementById('cfg-kondisi-lhi').value || 'AUTO';
+      const pejabat = getPejabatConfig();
+
+      const totalUnit = selectedRows.reduce((a, b) => a + b.jumlah, 0);
+      document.getElementById('script-summary-badge').innerText = `${selectedRows.length} Baris | ${totalUnit} Item`;
+
+      const box = document.getElementById('generated-script-box');
+      if (currentScriptMode === 'LHI') {
+        box.value = buildLhiInjectorScript(schoolsData, currentSchoolIndex, selectedRows, satuanOverride, kondisiOverride, pejabat);
+      } else if (currentScriptMode === 'AUTOPILOT') {
+        box.value = buildMasterAutoPilotScript(schoolsData, currentSchoolIndex, satuanOverride, 'Intan Pariwara', pejabat);
+      } else if (currentScriptMode === 'SPK') {
+        box.value = buildSpkConsoleScript(school, selectedRows, 'AUTO', satuanOverride);
+      } else if (currentScriptMode === 'HEADER') {
+        box.value = buildHeaderFormScript(school, pejabat);
+      } else {
+        box.value = buildBastConsoleScript(school, selectedRows, 'Intan Pariwara');
+      }
+    }
+
+    // ============================================================================
+    // BUILDER 1: ROBOT INPUT LKI / LHI PINTU 1 (SESUAI GAMBAR LEMBAR KERJA INVENTARISASI)
+    // ============================================================================
+    function buildLhiInjectorScript(allSchools, startIdx, selectedRows, satuanOverride, kondisiOverride, pejabat) {
+      const queueJson = JSON.stringify(allSchools);
+      const pejabatJson = JSON.stringify(pejabat);
+      const startRowNum = selectedRows.length > 0 ? selectedRows[0].no : 1;
+      const lines = [
+        "(function() {",
+        "  const topWin = window.top || window;",
+        "  const topDoc = topWin.document;",
+        "  const old = topDoc.getElementById('ebmd-lhi-pilot-panel');",
+        "  if (old) old.remove();",
+        "",
+        "  const QUEUE = " + queueJson + ";",
+        "  const PEJABAT = " + pejabatJson + ";",
+        "  let currentIdx = " + Number(startIdx || 0) + ";",
+        "  let rowCursor = " + Math.max(0, startRowNum - 1) + ";",
+        "  let isAutoLoop = false;",
+        "  let isBusy = false;",
+        "",
+        "  // Gunakan Persistent Frame agar saat klik [+ Tambah Baru] dan [Simpan] script tidak pernah hilang!",
+        "  let workFrame = topDoc.getElementById('ebmd-lhi-workframe');",
+        "  if (!workFrame) {",
+        "    const currentUrl = topWin.location.href;",
+        "    topDoc.body.innerHTML = '';",
+        "    topDoc.body.style.margin = '0';",
+        "    topDoc.body.style.padding = '0';",
+        "    topDoc.body.style.overflow = 'hidden';",
+        "    workFrame = topDoc.createElement('iframe');",
+        "    workFrame.id = 'ebmd-lhi-workframe';",
+        "    workFrame.src = currentUrl;",
+        "    workFrame.style.cssText = 'width:100vw;height:100vh;border:none;display:block;';",
+        "    topDoc.body.appendChild(workFrame);",
+        "  }",
+        "",
+        "  function getTargetDoc() { try { return workFrame.contentDocument || workFrame.contentWindow.document; } catch(e) { return topDoc; } }",
+        "  function getTargetWin() { try { return workFrame.contentWindow || topWin; } catch(e) { return topWin; } }",
+        "  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }",
+        "",
+        "  const panel = topDoc.createElement('div');",
+        "  panel.id = 'ebmd-lhi-pilot-panel';",
+        "  panel.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;width:485px;background:#020617;color:#f8fafc;border:2px solid #06b6d4;border-radius:16px;padding:14px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.95);font-family:sans-serif;';",
+        "  topDoc.body.appendChild(panel);",
+        "",
+        "  function log(msg, color) {",
+        "    const box = topDoc.getElementById('lhi-log-box');",
+        "    if (!box) return;",
+        "    const d = topDoc.createElement('div');",
+        "    d.style.color = color || '#e2e8f0';",
+        "    d.style.marginBottom = '3px';",
+        "    d.innerText = msg;",
+        "    box.appendChild(d);",
+        "    box.scrollTop = box.scrollHeight;",
+        "  }",
+        "",
+        "  function setInputVal(doc, win, el, val) {",
+        "    if (!el || val === undefined || val === null) return false;",
+        "    try {",
+        "      el.focus();",
+        "      const proto = el.tagName === 'TEXTAREA' ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;",
+        "      const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;",
+        "      if (nativeSetter) nativeSetter.call(el, String(val));",
+        "      else el.value = String(val);",
+        "      el.dispatchEvent(new win.Event('input', { bubbles: true }));",
+        "      el.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "      el.dispatchEvent(new win.Event('keyup', { bubbles: true }));",
+        "      el.dispatchEvent(new win.Event('blur', { bubbles: true }));",
+        "      if (win.jQuery) win.jQuery(el).val(String(val)).trigger('input').trigger('change').trigger('keyup').trigger('blur');",
+        "      return true;",
+        "    } catch(e) { return false; }",
+        "  }",
+        "",
+        "  function selectDropdownMatch(doc, win, sel, keywords, fallbackFirstValid) {",
+        "    if (!sel || !sel.options) return null;",
+        "    const kwList = Array.isArray(keywords) ? keywords : [keywords];",
+        "    for (const kw of kwList) {",
+        "      if (!kw) continue;",
+        "      const target = String(kw).toLowerCase().trim();",
+        "      if (!target || target === '-') continue;",
+        "      for (let i = 0; i < sel.options.length; i++) {",
+        "        const opt = sel.options[i];",
+        "        const txt = (opt.text || '').toLowerCase().trim();",
+        "        const val = (opt.value || '').toLowerCase().trim();",
+        "        if (!opt.value || txt.includes('silahkan pilih')) continue;",
+        "        if (txt.includes(target) || val === target || target.includes(txt)) {",
+        "          sel.selectedIndex = i;",
+        "          sel.value = opt.value;",
+        "          sel.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "          if (win.jQuery) win.jQuery(sel).val(opt.value).trigger('change').trigger('select2:select');",
+        "          return opt.text.trim();",
+        "        }",
+        "      }",
+        "    }",
+        "    if (fallbackFirstValid) {",
+        "      for (let i = 0; i < sel.options.length; i++) {",
+        "        const opt = sel.options[i];",
+        "        const txt = (opt.text || '').toLowerCase().trim();",
+        "        if (opt.value && !txt.includes('silahkan pilih') && !txt.startsWith('--')) {",
+        "          sel.selectedIndex = i;",
+        "          sel.value = opt.value;",
+        "          sel.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "          if (win.jQuery) win.jQuery(sel).val(opt.value).trigger('change').trigger('select2:select');",
+        "          return opt.text.trim();",
+        "        }",
+        "      }",
+        "    }",
+        "    return null;",
+        "  }",
+        "",
+        "  // Cari baris <tr> pada tabel form LKI berdasarkan teks di kolom kiri",
+        "  function findFormRow(doc, labelPatterns) {",
+        "    const rows = Array.from(doc.querySelectorAll('tr, .form-group'));",
+        "    for (const tr of rows) {",
+        "      const firstTd = tr.querySelector('td:first-child, th:first-child, label');",
+        "      const raw = ((firstTd ? firstTd.innerText : tr.innerText) || '').replace(/\\s+/g, ' ').trim().toLowerCase();",
+        "      if (labelPatterns.some(p => raw.includes(p.toLowerCase()))) return tr;",
+        "    }",
+        "    return null;",
+        "  }",
+        "",
+        "  // Klik radio button atau iCheck / span bulat di dalam suatu baris <tr> berdasarkan teks label ('TIDAK', 'YA', 'SESUAI', 'Pemerintah Daerah', 'Tidak Ditemukan')",
+        "  function clickRadioInRow(doc, win, tr, targetLabelText) {",
+        "    if (!tr) return false;",
+        "    const target = targetLabelText.toLowerCase().trim();",
+        "    // 1. Cek semua label atau text node di dekat input radio/checkbox",
+        "    const inputs = Array.from(tr.querySelectorAll('input[type=\"radio\"], input[type=\"checkbox\"]'));",
+        "    for (const inp of inputs) {",
+        "      const parentTxt = (inp.parentElement?.innerText || inp.nextSibling?.textContent || '').replace(/\\s+/g, ' ').trim().toLowerCase();",
+        "      const labelFor = inp.id ? doc.querySelector('label[for=\"' + inp.id + '\"]') : null;",
+        "      const lblTxt = (labelFor ? labelFor.innerText : '').toLowerCase().trim();",
+        "      const valTxt = String(inp.value || '').toLowerCase();",
+        "      const matchExact = (parentTxt === target || lblTxt === target || parentTxt.startsWith(target + ' ') || parentTxt.endsWith(' ' + target));",
+        "      const matchTidak = (target === 'tidak' && (parentTxt.includes('tidak') || lblTxt.includes('tidak') || valTxt === '0' || valTxt === '2' || valTxt === 'tidak'));",
+        "      const matchYa = ((target === 'ya' || target === 'sesuai') && (parentTxt.includes('ya') || parentTxt.includes('sesuai') || valTxt === '1' || valTxt === 'ya'));",
+        "      if (matchExact || matchTidak || matchYa || parentTxt.includes(target)) {",
+        "        inp.click();",
+        "        inp.checked = true;",
+        "        inp.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "        if (win.jQuery) {",
+        "          try { win.jQuery(inp).prop('checked', true).trigger('change').trigger('click'); win.jQuery(inp).iCheck('check'); } catch(e) {}",
+        "        }",
+        "        const helper = inp.parentElement?.querySelector('.iCheck-helper, ins, span');",
+        "        if (helper) { try { helper.click(); } catch(e) {} }",
+        "        return true;",
+        "      }",
+        "    }",
+        "    // 2. Fallback: cari elemen span/label/div yang teksnya cocok lalu klik",
+        "    const candidates = Array.from(tr.querySelectorAll('label, span, div, td'));",
+        "    for (const el of candidates) {",
+        "      const t = (el.innerText || '').replace(/\\s+/g, ' ').trim().toLowerCase();",
+        "      if (t === target || (target === 'tidak' && t === 'tidak')) {",
+        "        el.click();",
+        "        const childInp = el.querySelector('input') || el.previousElementSibling;",
+        "        if (childInp && childInp.click) childInp.click();",
+        "        return true;",
+        "      }",
+        "    }",
+        "    return false;",
+        "  }",
+        "",
+        "  function detectPageType() {",
+        "    const doc = getTargetDoc();",
+        "    const bodyTxt = (doc.body ? doc.body.innerText : '');",
+        "    if (bodyTxt.includes('Form Input') || bodyTxt.includes('NIBAR & Nama Barang') || bodyTxt.includes('PELAKSANA / PETUGAS INVENTARISASI')) {",
+        "      return 'FORM_INPUT_LKI';",
+        "    }",
+        "    if (bodyTxt.includes('LEMBAR KERJA INVENTARISASI') && (bodyTxt.includes('Tambah Baru') || bodyTxt.includes('Daftar Tercatat'))) {",
+        "      return 'DAFTAR_LKI';",
+        "    }",
+        "    return 'LAINNYA';",
+        "  }",
+        "",
+        "  // Tunggu sampai <select> memiliki opsi selain '-- SILAHKAN PILIH --'",
+        "  async function waitSelectPopulated(sel, maxWaitMs) {",
+        "    if (!sel) return false;",
+        "    const loops = Math.ceil((maxWaitMs || 3500) / 250);",
+        "    for (let i = 0; i < loops; i++) {",
+        "      const validOpts = Array.from(sel.options || []).filter(o => o.value && !/silahkan pilih/i.test(o.text));",
+        "      if (validOpts.length > 0) return true;",
+        "      await sleep(250);",
+        "    }",
+        "    return false;",
+        "  }",
+        "",
+        "  // FUNGSI UTAMA: Mengisi Form Input Pintu 1 (Gambar 2, 3, 4) untuk 1 Baris Kertas Kerja",
+        "  async function fillFormLkiPintu1(row, autoSubmit) {",
+        "    const doc = getTargetDoc();",
+        "    const win = getTargetWin();",
+        "    log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#334155');",
+        "    log('📋 Mengisi Baris #' + row.no + ': ' + row.kode + ' | ' + row.judul, '#38bdf8');",
+        "",
+        "    // 0. Pastikan STATUS BARANG = Barang Sudah Tercatat",
+        "    const trStatus = findFormRow(doc, ['status barang']);",
+        "    if (trStatus) clickRadioInRow(doc, win, trStatus, 'barang sudah tercatat');",
+        "",
+        "    // 1. Pilih 1. Tahun (sesuai tahun perolehan di kertas kerja)",
+        "    const trTahun = findFormRow(doc, ['1. tahun', 'tahun']);",
+        "    const selTahun = trTahun ? trTahun.querySelector('select') : null;",
+        "    const thnTarget = String(row.tahun || '2024').trim();",
+        "    if (selTahun) {",
+        "      const pickedThn = selectDropdownMatch(doc, win, selTahun, [thnTarget], true);",
+        "      log('  ✔ 1. Tahun: ' + (pickedThn || thnTarget), '#4ade80');",
+        "      await sleep(750);",
+        "    }",
+        "",
+        "    // 2. Pilih 2. Jenis Barang (misal 1.3.2 - PERALATAN DAN MESIN / sesuai kode)",
+        "    const trJenis = findFormRow(doc, ['2. jenis barang', 'jenis barang']);",
+        "    const selJenis = trJenis ? trJenis.querySelector('select') : null;",
+        "    const prefixJenis = row.kode ? row.kode.split('.').slice(0, 3).join('.') : '1.3.2';",
+        "    if (selJenis) {",
+        "      await waitSelectPopulated(selJenis, 3500);",
+        "      const pickedJns = selectDropdownMatch(doc, win, selJenis, [prefixJenis, 'peralatan dan mesin', 'aset tetap'], true);",
+        "      log('  ✔ 2. Jenis Barang: ' + (pickedJns || prefixJenis), '#4ade80');",
+        "      await sleep(850);",
+        "    }",
+        "",
+        "    // 3. Pilih 3. Kode Barang * (sesuai Kode Barang di kertas kerja)",
+        "    const trKode = findFormRow(doc, ['3. kode barang', 'kode barang *']);",
+        "    const selKode = trKode ? trKode.querySelector('select') : null;",
+        "    if (selKode) {",
+        "      await waitSelectPopulated(selKode, 4000);",
+        "      const pickedKd = selectDropdownMatch(doc, win, selKode, [row.kode, row.judul], true);",
+        "      log('  ✔ 3. Kode Barang: ' + (pickedKd || row.kode), '#4ade80');",
+        "      await sleep(950);",
+        "    }",
+        "",
+        "    // 4. Pilih 4. NIBAR & Nama Barang * (cocokkan NIBAR / Register / Nama Barang, atau pilih yang tersedia paling atas)",
+        "    const trNibar = findFormRow(doc, ['4. nibar', 'nibar & nama barang']);",
+        "    const selNibar = trNibar ? trNibar.querySelector('select') : null;",
+        "    if (selNibar) {",
+        "      await waitSelectPopulated(selNibar, 4500);",
+        "      const nibarKeywords = [];",
+        "      if (row.nibar && row.nibar !== '-') nibarKeywords.push(row.nibar);",
+        "      if (row.nup && row.nup !== '-' && row.nup !== '1') nibarKeywords.push(row.nup);",
+        "      if (row.judul) nibarKeywords.push(row.judul);",
+        "      const pickedNibar = selectDropdownMatch(doc, win, selNibar, nibarKeywords, true);",
+        "      log('  ✔ 4. NIBAR & Nama Barang: ' + (pickedNibar || 'Terpilih otomatis'), '#4ade80');",
+        "      await sleep(1000);",
+        "    }",
+        "",
+        "    // 5. Cek G. Keberadaan Barang (Ada vs Tidak Ditemukan)",
+        "    const isTidakDitemukan = /tidak|hilang/i.test(String(row.statusAda || ''));",
+        "    const trKeberadaan = findFormRow(doc, ['g. keberadaan barang', 'keberadaan barang']);",
+        "    if (isTidakDitemukan) {",
+        "      log('  ⚠️ Keberadaan Barang: TIDAK DITEMUKAN -> Centang TIDAK & Tidak Ditemukan + Isi 1', '#fbbf24');",
+        "      if (trKeberadaan) {",
+        "        clickRadioInRow(doc, win, trKeberadaan, 'tidak');",
+        "        await sleep(500);",
+        "      }",
+        "      // Cari sub-pilihan 'Tidak Ditemukan' yang muncul setelah klik TIDAK",
+        "      const allRowsAfter = Array.from(doc.querySelectorAll('tr, .form-group, div'));",
+        "      for (const el of allRowsAfter) {",
+        "        const txt = (el.innerText || '').toLowerCase();",
+        "        if (txt.includes('tidak ditemukan')) {",
+        "          clickRadioInRow(doc, win, el, 'tidak ditemukan');",
+        "          const inpJmlTd = el.querySelector('input[type=\"text\"], input[type=\"number\"]');",
+        "          if (inpJmlTd && !inpJmlTd.disabled) {",
+        "            setInputVal(doc, win, inpJmlTd, '1');",
+        "            log('  ✔ Centang Tidak Ditemukan & isi angka 1', '#4ade80');",
+        "          }",
+        "        }",
+        "      }",
+        "      // Fallback: cari input kosong di sekitar baris G. Keberadaan Barang jika baru terbuka",
+        "      if (trKeberadaan) {",
+        "        let nextTr = trKeberadaan.nextElementSibling;",
+        "        for (let k = 0; k < 4 && nextTr; k++) {",
+        "          const nextTxt = (nextTr.innerText || '').toLowerCase();",
+        "          if (nextTxt.includes('tidak ditemukan') || nextTxt.includes('hilang') || !nextTxt.match(/^[h-u]\\./)) {",
+        "            clickRadioInRow(doc, win, nextTr, 'tidak ditemukan');",
+        "            const inpNum = nextTr.querySelector('input[type=\"text\"]:not([disabled]), input[type=\"number\"]:not([disabled])');",
+        "            if (inpNum) setInputVal(doc, win, inpNum, '1');",
+        "          }",
+        "          nextTr = nextTr.nextElementSibling;",
+        "        }",
+        "      }",
+        "    } else {",
+        "      if (trKeberadaan) clickRadioInRow(doc, win, trKeberadaan, 'ya');",
+        "      log('  ✔ G. Keberadaan Barang: YA (Ada)', '#4ade80');",
+        "    }",
+        "",
+        "    // 6. Centang TIDAK untuk M. Nomor Polisi, N. Nomor Rangka, O. Nomor Mesin, P. Nomor BPKB",
+        "    const vehicleRows = [",
+        "      { key: ['m. nomor polisi', 'nomor polisi'], label: 'M. Nomor Polisi' },",
+        "      { key: ['n. nomor rangka', 'nomor rangka'], label: 'N. Nomor Rangka' },",
+        "      { key: ['o. nomor mesin', 'nomor mesin'], label: 'O. Nomor Mesin' },",
+        "      { key: ['p. nomor bpkb', 'nomor bpkb'], label: 'P. Nomor BPKB' }",
+        "    ];",
+        "    for (const vr of vehicleRows) {",
+        "      const trVeh = findFormRow(doc, vr.key);",
+        "      if (trVeh) {",
+        "        clickRadioInRow(doc, win, trVeh, 'tidak');",
+        "        await sleep(150);",
+        "        // Jika ada kolom 'Sebutkan Yang Seharusnya' dan wajib diisi, isi strip '-'",
+        "        const inpSeharusnya = trVeh.querySelector('input[placeholder*=\"Sebutkan\"], input[type=\"text\"]:not([disabled]):not([readonly])');",
+        "        if (inpSeharusnya && !inpSeharusnya.value) {",
+        "          setInputVal(doc, win, inpSeharusnya, '-');",
+        "        }",
+        "      }",
+        "    }",
+        "    log('  ✔ Nomor Polisi, Rangka, Mesin, BPKB -> Dicentang TIDAK', '#4ade80');",
+        "",
+        "    // 7. Pastikan Q. Penggunaan Barang = Pemerintah Daerah (jika ada dan belum tercentang)",
+        "    const trPenggunaan = findFormRow(doc, ['q. penggunaan barang', 'penggunaan barang']);",
+        "    if (trPenggunaan) {",
+        "      clickRadioInRow(doc, win, trPenggunaan, 'pemerintah daerah');",
+        "    }",
+        "",
+        "    // 8. Isi T. Keterangan dari kertas kerja",
+        "    const trKet = findFormRow(doc, ['t. keterangan', 'keterangan']);",
+        "    if (trKet) {",
+        "      const inpKet = trKet.querySelector('input[type=\"text\"], textarea');",
+        "      if (inpKet && row.ket) {",
+        "        setInputVal(doc, win, inpKet, row.ket);",
+        "        log('  ✔ T. Keterangan: ' + row.ket, '#4ade80');",
+        "      }",
+        "    }",
+        "",
+        "    // 9. Pilih PELAKSANA / PETUGAS INVENTARISASI (Petugas 1: MA'RUF, Petugas 2: Ansyar Sutiadi, S.Sos., M.Si)",
+        "    const trPetugas1 = findFormRow(doc, ['1. nama petugas 1', 'nama petugas 1', 'petugas 1']);",
+        "    const selPetugas1 = trPetugas1 ? trPetugas1.querySelector('select') : null;",
+        "    if (selPetugas1) {",
+        "      const p1 = selectDropdownMatch(doc, win, selPetugas1, [PEJABAT.pengurusNama, \"MA'RUF\", 'MARUF', '19830626'], true);",
+        "      log('  ✔ Petugas 1: ' + (p1 || \"MA'RUF\"), '#4ade80');",
+        "    }",
+        "",
+        "    const trPetugas2 = findFormRow(doc, ['2. nama petugas 2', 'nama petugas 2', 'petugas 2']);",
+        "    const selPetugas2 = trPetugas2 ? trPetugas2.querySelector('select') : null;",
+        "    if (selPetugas2) {",
+        "      const p2 = selectDropdownMatch(doc, win, selPetugas2, [PEJABAT.petugas2Nama, 'Ansyar Sutiadi', 'ANSYAR'], true);",
+        "      log('  ✔ Petugas 2: ' + (p2 || 'Ansyar Sutiadi, S.Sos., M.Si'), '#4ade80');",
+        "    }",
+        "",
+        "    await sleep(400);",
+        "    if (autoSubmit) {",
+        "      const btnSimpan = Array.from(doc.querySelectorAll('button, input[type=\"submit\"], a.btn')).find(b => /^simpan$/i.test((b.innerText || b.value || '').trim()));",
+        "      if (btnSimpan) {",
+        "        log('💾 Mengklik tombol [Simpan] untuk Baris #' + row.no + '...', '#facc15');",
+        "        rowCursor++;",
+        "        btnSimpan.click();",
+        "        return;",
+        "      }",
+        "    }",
+        "    log('✅ Baris #' + row.no + ' selesai diisi! Silakan cek atau klik Simpan.', '#4ade80');",
+        "  }",
+        "",
+        "  // Mesin Otomatis: Klik [+ Tambah Baru] di Daftar LKI -> Isi Form Pintu 1 -> Simpan -> Ulangi",
+        "  async function runAutoLoopEngine() {",
+        "    if (isBusy) return;",
+        "    isBusy = true;",
+        "    try {",
+        "      const doc = getTargetDoc();",
+        "      const s = QUEUE[currentIdx];",
+        "      const page = detectPageType();",
+        "      const badge = topDoc.getElementById('lhi-stage-badge');",
+        "      if (badge) badge.innerText = page;",
+        "",
+        "      if (rowCursor >= s.rows.length) {",
+        "        isAutoLoop = false;",
+        "        log('🎉 SELESAI! Seluruh ' + s.rows.length + ' baris LKI/LHI telah selesai diinput!', '#4ade80');",
+        "        renderPanel();",
+        "        isBusy = false;",
+        "        return;",
+        "      }",
+        "",
+        "      if (page === 'DAFTAR_LKI') {",
+        "        const btnTambah = Array.from(doc.querySelectorAll('a, button')).find(el => /tambah baru/i.test((el.innerText || '').trim()));",
+        "        if (btnTambah) {",
+        "          log('➕ Mengklik tombol hijau [+ Tambah Baru] untuk Baris #' + (rowCursor + 1) + '...', '#4ade80');",
+        "          await sleep(400);",
+        "          btnTambah.click();",
+        "        } else {",
+        "          log('⚠️ Tombol [+ Tambah Baru] tidak ditemukan di halaman ini.', '#f87171');",
+        "        }",
+        "      } else if (page === 'FORM_INPUT_LKI') {",
+        "        const row = s.rows[rowCursor];",
+        "        if (row) {",
+        "          await fillFormLkiPintu1(row, true);",
+        "        }",
+        "      } else {",
+        "        log('ℹ️ Silakan masuk ke menu Daftar LKI atau Form Input Pintu 1 terlebih dahulu.', '#facc15');",
+        "      }",
+        "    } catch (err) {",
+        "      log('❌ Error: ' + err.message, '#f87171');",
+        "    }",
+        "    isBusy = false;",
+        "  }",
+        "",
+        "  function renderPanel() {",
+        "    const s = QUEUE[currentIdx];",
+        "    const curRow = s.rows[rowCursor] || s.rows[s.rows.length - 1];",
+        "    let opts = '';",
+        "    QUEUE.forEach((item, idx) => {",
+        "      const sel = idx === currentIdx ? 'selected' : '';",
+        "      opts += `<option value=\"${idx}\" ${sel}>${idx + 1}/${QUEUE.length} — ${item.namaSekolah} (${item.rows.length} Brs)</option>`;",
+        "    });",
+        "",
+        "    panel.innerHTML = `",
+        "      <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #1e293b;padding-bottom:8px;\">",
+        "        <div>",
+        "          <div style=\"font-weight:900;font-size:13px;color:#38bdf8;\">📋 ROBOT LKI / LHI PINTU 1 v10.1</div>",
+        "          <div style=\"font-size:10px;color:#94a3b8;\">Auto +Tambah Baru ➔ NIBAR ➔ Polisi/Rangka/Mesin/BPKB (Tidak) ➔ Petugas 1 & 2</div>",
+        "        </div>",
+        "        <div style=\"display:flex;align-items:center;gap:6px;\">",
+        "          <span id=\"lhi-stage-badge\" style=\"font-size:9px;background:#06b6d420;color:#22d3ee;padding:2px 7px;border-radius:99px;font-weight:800;\">${detectPageType()}</span>",
+        "          <button id=\"lhi-close-btn\" style=\"background:#1e293b;border:none;color:#94a3b8;border-radius:6px;padding:3px 8px;cursor:pointer;font-size:11px;font-weight:700;\">✖</button>",
+        "        </div>",
+        "      </div>",
+        "      <div style=\"margin-bottom:8px;\">",
+        "        <select id=\"lhi-queue-sel\" style=\"width:100%;background:#0f172a;color:#38bdf8;border:1px solid #334155;border-radius:8px;padding:6px 8px;font-size:11px;font-weight:800;\">${opts}</select>",
+        "      </div>",
+        "      <div style=\"background:#0f172a;border:1px solid #1e293b;border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:11px;line-height:1.45;\">",
+        "        <div style=\"display:flex;justify-content:space-between;\">",
+        "          <span>Target Baris: <b style=\"color:#facc15;\">#${Math.min(rowCursor + 1, s.rows.length)} dari ${s.rows.length}</b></span>",
+        "          <span>Tahun: <b style=\"color:#4ade80;\">${curRow ? (curRow.tahun || '2024') : '-'}</b> | Status: <b style=\"color:#fda4af;\">${curRow ? (curRow.statusAda || 'Ada') : '-'}</b></span>",
+        "        </div>",
+        "        <div style=\"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">Kode & NIBAR: <b style=\"color:#38bdf8;\">${curRow ? curRow.kode + (curRow.nibar ? ' [' + curRow.nibar + ']' : '') : '-'}</b></div>",
+        "        <div style=\"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;\">Nama Barang: <b style=\"color:#e2e8f0;\">${curRow ? curRow.judul : '-'}</b></div>",
+        "        <div style=\"font-size:10px;color:#94a3b8;margin-top:2px;\">Petugas 1: <b style=\"color:#a7f3d0;\">MA'RUF</b> | Petugas 2: <b style=\"color:#a7f3d0;\">${PEJABAT.petugas2Nama}</b></div>",
+        "      </div>",
+        "      <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;\">",
+        "        <button id=\"lhi-btn-auto\" style=\"padding:9px;border:none;border-radius:10px;background:${isAutoLoop ? '#f59e0b' : 'linear-gradient(135deg,#06b6d4,#2563eb)'};color:#fff;font-weight:900;font-size:11px;cursor:pointer;\">${isAutoLoop ? '⏸️ JEDA AUTO-PILOT LKI' : '🚀 JALANKAN AUTO-PILOT LKI'}</button>",
+        "        <button id=\"lhi-btn-one\" style=\"padding:9px;border:none;border-radius:10px;background:#10b981;color:#020617;font-weight:900;font-size:11px;cursor:pointer;\">✨ ISI FORM INI SAJA (#${Math.min(rowCursor + 1, s.rows.length)})</button>",
+        "      </div>",
+        "      <div style=\"display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px;\">",
+        "        <button id=\"lhi-btn-prev\" style=\"padding:6px;border:1px solid #334155;border-radius:7px;background:#0f172a;color:#94a3b8;font-size:10px;font-weight:700;cursor:pointer;\">⏮️ Baris Sebelumnya</button>",
+        "        <button id=\"lhi-btn-add\" style=\"padding:6px;border:1px solid #334155;border-radius:7px;background:#0f172a;color:#4ade80;font-size:10px;font-weight:700;cursor:pointer;\">➕ Klik Tambah Baru</button>",
+        "        <button id=\"lhi-btn-next\" style=\"padding:6px;border:1px solid #334155;border-radius:7px;background:#0f172a;color:#facc15;font-size:10px;font-weight:700;cursor:pointer;\">⏭️ Baris Berikutnya</button>",
+        "      </div>",
+        "      <div id=\"lhi-log-box\" style=\"background:#090d16;border:1px solid #1e293b;border-radius:8px;padding:8px;height:125px;overflow-y:auto;font-family:monospace;font-size:10px;\">",
+        "        <div style=\"color:#38bdf8;\">📋 Robot LKI Pintu 1 siap! Klik [🚀 JALANKAN AUTO-PILOT LKI] untuk mulai otomatis dari [+ Tambah Baru] s/d selesai.</div>",
+        "      </div>",
+        "    `;",
+        "",
+        "    topDoc.getElementById('lhi-close-btn').onclick = () => panel.remove();",
+        "    topDoc.getElementById('lhi-queue-sel').onchange = function() {",
+        "      currentIdx = parseInt(this.value, 10) || 0;",
+        "      rowCursor = 0;",
+        "      renderPanel();",
+        "    };",
+        "    topDoc.getElementById('lhi-btn-auto').onclick = function() {",
+        "      isAutoLoop = !isAutoLoop;",
+        "      renderPanel();",
+        "      if (isAutoLoop) runAutoLoopEngine();",
+        "    };",
+        "    topDoc.getElementById('lhi-btn-one').onclick = async function() {",
+        "      const r = QUEUE[currentIdx].rows[rowCursor];",
+        "      if (r) await fillFormLkiPintu1(r, false);",
+        "    };",
+        "    topDoc.getElementById('lhi-btn-add').onclick = function() {",
+        "      const doc = getTargetDoc();",
+        "      const btnTambah = Array.from(doc.querySelectorAll('a, button')).find(el => /tambah baru/i.test((el.innerText || '').trim()));",
+        "      if (btnTambah) btnTambah.click();",
+        "      else log('⚠️ Tombol [+ Tambah Baru] tidak ditemukan di halaman ini.', '#f87171');",
+        "    };",
+        "    topDoc.getElementById('lhi-btn-prev').onclick = function() {",
+        "      rowCursor = Math.max(0, rowCursor - 1);",
+        "      renderPanel();",
+        "    };",
+        "    topDoc.getElementById('lhi-btn-next').onclick = function() {",
+        "      rowCursor = Math.min(QUEUE[currentIdx].rows.length - 1, rowCursor + 1);",
+        "      renderPanel();",
+        "    };",
+        "  }",
+        "",
+        "  workFrame.addEventListener('load', async function() {",
+        "    await sleep(750);",
+        "    renderPanel();",
+        "    if (isAutoLoop) {",
+        "      await runAutoLoopEngine();",
+        "    }",
+        "  });",
+        "",
+        "  renderPanel();",
+        "})();"
+      ];
+      return lines.join('\n');
+    }
+
+    // ============================================================================
+    // BUILDER 2: MASTER AUTO-PILOT (PENGADAAN SPK + BAST + SPV)
+    // ============================================================================
+    function buildMasterAutoPilotScript(allSchools, startIdx, satuanOverride, defaultPengarang, pejabat) {
+      const queueJson = JSON.stringify(allSchools);
+      const pejabatJson = JSON.stringify(pejabat);
+      const lines = [
+        "(function() {",
+        "  const topWin = window.top || window;",
+        "  const topDoc = topWin.document;",
+        "  const oldPanel = topDoc.getElementById('ebmd-master-pilot');",
+        "  if (oldPanel) oldPanel.remove();",
+        "",
+        "  const QUEUE = " + queueJson + ";",
+        "  const PEJABAT = " + pejabatJson + ";",
+        "  const SATUAN_CFG = " + JSON.stringify(satuanOverride) + ";",
+        "  const PENGARANG_CFG = " + JSON.stringify(defaultPengarang) + ";",
+        "  let currentIdx = " + Number(startIdx || 0) + ";",
+        "  let isAutoRunning = false;",
+        "  let isBusyStage = false;",
+        "",
+        "  let workFrame = topDoc.getElementById('ebmd-persistent-frame');",
+        "  if (!workFrame) {",
+        "    const currentUrl = topWin.location.href;",
+        "    topDoc.body.innerHTML = '';",
+        "    topDoc.body.style.margin = '0';",
+        "    topDoc.body.style.padding = '0';",
+        "    topDoc.body.style.overflow = 'hidden';",
+        "    workFrame = topDoc.createElement('iframe');",
+        "    workFrame.id = 'ebmd-persistent-frame';",
+        "    workFrame.src = currentUrl;",
+        "    workFrame.style.cssText = 'width:100vw;height:100vh;border:none;display:block;';",
+        "    topDoc.body.appendChild(workFrame);",
+        "  }",
+        "",
+        "  function getTargetDoc() { try { return workFrame.contentDocument || workFrame.contentWindow.document; } catch (e) { return topDoc; } }",
+        "  function getTargetWin() { try { return workFrame.contentWindow || topWin; } catch (e) { return topWin; } }",
+        "",
+        "  const panel = topDoc.createElement('div');",
+        "  panel.id = 'ebmd-master-pilot';",
+        "  panel.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;width:460px;background:#020617;color:#f8fafc;border:2px solid #f43f5e;border-radius:16px;padding:14px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.95);font-family:sans-serif;';",
+        "  topDoc.body.appendChild(panel);",
+        "",
+        "  function log(msg, color) {",
+        "    const box = topDoc.getElementById('mp-log-box');",
+        "    if (!box) return;",
+        "    const d = topDoc.createElement('div');",
+        "    d.style.color = color || '#e2e8f0';",
+        "    d.style.marginBottom = '3px';",
+        "    d.innerText = msg;",
+        "    box.appendChild(d);",
+        "    box.scrollTop = box.scrollHeight;",
+        "  }",
+        "",
+        "  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }",
+        "",
+        "  function setFieldValAngular(doc, win, el, val) {",
+        "    if (!el || val === undefined || val === null) return false;",
+        "    try {",
+        "      el.focus();",
+        "      const proto = el.tagName === 'TEXTAREA' ? win.HTMLTextAreaElement.prototype : win.HTMLInputElement.prototype;",
+        "      const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;",
+        "      if (nativeSetter) nativeSetter.call(el, String(val));",
+        "      else el.value = String(val);",
+        "      el.dispatchEvent(new win.Event('input', { bubbles: true }));",
+        "      el.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "      el.dispatchEvent(new win.Event('blur', { bubbles: true }));",
+        "      if (win.angular) {",
+        "        try {",
+        "          const ngEl = win.angular.element(el);",
+        "          const ctrl = ngEl.controller('ngModel');",
+        "          if (ctrl) { ctrl.$setViewValue(String(val)); ctrl.$render(); }",
+        "        } catch(e) {}",
+        "      }",
+        "      if (win.jQuery) win.jQuery(el).val(String(val)).trigger('input').trigger('change').trigger('blur');",
+        "      return true;",
+        "    } catch(e) { return false; }",
+        "  }",
+        "",
+        "  function selectOptionAngular(doc, win, sel, keywords) {",
+        "    if (!sel || !sel.options || sel.disabled) return null;",
+        "    const kwList = Array.isArray(keywords) ? keywords : [keywords];",
+        "    for (const kw of kwList) {",
+        "      if (!kw) continue;",
+        "      const target = String(kw).toLowerCase().trim();",
+        "      for (let i = 0; i < sel.options.length; i++) {",
+        "        const opt = sel.options[i];",
+        "        const txt = (opt.text || '').toLowerCase();",
+        "        const val = (opt.value || '').toLowerCase();",
+        "        if (txt.includes(target) || val === target) {",
+        "          sel.selectedIndex = i;",
+        "          sel.value = opt.value;",
+        "          sel.dispatchEvent(new win.Event('change', { bubbles: true }));",
+        "          if (win.jQuery) win.jQuery(sel).val(opt.value).trigger('change').trigger('select2:select');",
+        "          return opt.text.trim();",
+        "        }",
+        "      }",
+        "    }",
+        "    return null;",
+        "  }",
+        "",
+        "  function findRowCtrlExact(doc, labelCandidates, selector) {",
+        "    const rows = Array.from(doc.querySelectorAll('tr, .form-group'));",
+        "    for (const tr of rows) {",
+        "      const firstCol = tr.querySelector('td:first-child, th:first-child, label');",
+        "      const rawLabel = (firstCol ? firstCol.innerText : tr.innerText || '').toLowerCase().replace(/\\*/g, '').trim();",
+        "      for (const cand of labelCandidates) {",
+        "        if (rawLabel === cand || rawLabel.startsWith(cand)) {",
+        "          const ctrl = tr.querySelector(selector);",
+        "          if (ctrl && !ctrl.disabled) return ctrl;",
+        "        }",
+        "      }",
+        "    }",
+        "    return null;",
+        "  }",
+        "",
+        "  function detectStage() {",
+        "    const doc = getTargetDoc();",
+        "    const win = getTargetWin();",
+        "    const url = (win.location ? win.location.href : '').toLowerCase();",
+        "    const bodyTxt = (doc.body ? doc.body.innerText : '');",
+        "    if (url.includes('/detailspk')) return '2B_DETAIL_SPK_READONLY';",
+        "    if (doc.querySelector('#sumber') || doc.querySelector('#Banyaknya') || bodyTxt.includes('APAKAH REKENING SESUAI DENGAN ASSET')) return '5_RINCIAN_SPK';",
+        "    if (bodyTxt.includes('Kodefikasi Barang') && (bodyTxt.includes('Jumlah Pembayaran') || bodyTxt.includes('Sisa Belum Bayar'))) return '7_RINCIAN_BAST';",
+        "    if (bodyTxt.includes('SURAT PERNYATAAN VERIFIKASI') || bodyTxt.includes('Berita Acara Serah Terima Barang')) return '6_HEADER_BAST';",
+        "    if (bodyTxt.includes('INFORMASI PENGADAAN') && bodyTxt.includes('Bukti Perolehan')) return '5B_DAFTAR_BAST';",
+        "    if (bodyTxt.includes('INFORMASI CARA PEROLEHAN') || bodyTxt.includes('Rancang Bangun Rinci')) return '3_HEADER_SPK';",
+        "    if (bodyTxt.includes('Rekening Belanja') && bodyTxt.includes('Sub Kegiatan') && !bodyTxt.includes('Kodefikasi Barang')) return '4_PILIH_REKENING';",
+        "    if (bodyTxt.includes('DAFTAR PENGADAAN') || bodyTxt.includes('Tambah Bentuk Kontrak')) return '2_DAFTAR_PENGADAAN';",
+        "    if (bodyTxt.includes('Pengelola/Pengguna/Kuasa Pengguna Barang')) return '1_PILIH_SEKOLAH';",
+        "    return 'LAINNYA';",
+        "  }",
+        "",
+        "  async function runStageEngine(forceStage) {",
+        "    if (isBusyStage) return;",
+        "    isBusyStage = true;",
+        "    try {",
+        "      const doc = getTargetDoc();",
+        "      const win = getTargetWin();",
+        "      const s = QUEUE[currentIdx];",
+        "      const stage = forceStage || detectStage();",
+        "      const badge = topDoc.getElementById('mp-stage-badge');",
+        "      if (badge) badge.innerText = 'TAHAP: ' + stage;",
+        "",
+        "      if (stage === '1_PILIH_SEKOLAH') {",
+        "        log('🏫 [Tahap 1] Memilih sekolah: ' + s.namaSekolah, '#38bdf8');",
+        "        const selects = Array.from(doc.querySelectorAll('select'));",
+        "        for (const sel of selects) {",
+        "          if (selectOptionAngular(doc, win, sel, [s.namaSekolah])) break;",
+        "        }",
+        "        const semChk = Array.from(doc.querySelectorAll('input[type=\"checkbox\"]')).find(c => (c.closest('tr')?.innerText || '').toLowerCase().includes('semester'));",
+        "        if (semChk && !semChk.checked) semChk.click();",
+        "        await sleep(400);",
+        "        const btnSubmit = Array.from(doc.querySelectorAll('button, input[type=\"submit\"]')).find(b => /submit/i.test(b.innerText || b.value || ''));",
+        "        if (btnSubmit) btnSubmit.click();",
+        "      }",
+        "    } catch (err) {",
+        "      log('❌ Error: ' + err.message, '#f87171');",
+        "    }",
+        "    isBusyStage = false;",
+        "  }",
+        "",
+        "  function renderPanel() {",
+        "    const s = QUEUE[currentIdx];",
+        "    let opts = '';",
+        "    QUEUE.forEach((item, idx) => {",
+        "      const sel = idx === currentIdx ? 'selected' : '';",
+        "      opts += `<option value=\"${idx}\" ${sel}>${idx + 1}/${QUEUE.length} — ${item.namaSekolah}</option>`;",
+        "    });",
+        "    panel.innerHTML = `",
+        "      <div style=\"display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #1e293b;padding-bottom:8px;\">",
+        "        <div style=\"font-weight:900;font-size:13px;color:#fb7185;\">🛡️ MASTER AUTO-PILOT v10.0</div>",
+        "        <span id=\"mp-stage-badge\" style=\"font-size:10px;background:#f43f5e20;color:#fda4af;padding:2px 8px;border-radius:99px;font-weight:800;\">TAHAP: ${detectStage()}</span>",
+        "      </div>",
+        "      <select id=\"mp-queue-select\" style=\"width:100%;background:#0f172a;color:#38bdf8;border:1px solid #334155;border-radius:8px;padding:6px;font-size:11px;font-weight:800;margin-bottom:8px;\">${opts}</select>",
+        "      <div style=\"display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;\">",
+        "        <button id=\"mp-btn-auto\" style=\"padding:9px;border:none;border-radius:10px;background:#10b981;color:#020617;font-weight:900;font-size:11px;cursor:pointer;\">🚀 MULAI / LANJUTKAN</button>",
+        "        <button id=\"mp-btn-next\" style=\"padding:9px;border:none;border-radius:10px;background:#e11d48;color:#fff;font-weight:900;font-size:11px;cursor:pointer;\">⏭️ SEKOLAH BERIKUTNYA</button>",
+        "      </div>",
+        "      <div id=\"mp-log-box\" style=\"background:#090d16;border:1px solid #1e293b;border-radius:8px;padding:8px;height:110px;overflow-y:auto;font-family:monospace;font-size:10px;\">",
+        "        <div style=\"color:#94a3b8;\">Siap mengerjakan: ${s.namaSekolah}</div>",
+        "      </div>",
+        "    `;",
+        "    topDoc.getElementById('mp-queue-select').onchange = function() { currentIdx = parseInt(this.value, 10) || 0; renderPanel(); };",
+        "    topDoc.getElementById('mp-btn-auto').onclick = function() { isAutoRunning = true; runStageEngine(); };",
+        "    topDoc.getElementById('mp-btn-next').onclick = function() { if (currentIdx < QUEUE.length - 1) currentIdx++; renderPanel(); };",
+        "  }",
+        "  renderPanel();",
+        "})();"
+      ];
+      return lines.join('\n');
+    }
+
+    function buildSpkConsoleScript(school, rows, sumberOverride, satuanOverride) {
+      return buildLhiInjectorScript([school], 0, rows, satuanOverride, 'AUTO', getPejabatConfig());
+    }
+
+    function buildHeaderFormScript(school, pejabat) {
+      return buildLhiInjectorScript([school], 0, school.rows, 'AUTO', 'AUTO', pejabat);
+    }
+
+    function buildBastConsoleScript(school, rows, defaultPengarang) {
+      return buildLhiInjectorScript([school], 0, rows, 'AUTO', 'AUTO', getPejabatConfig());
+    }
+
+    function copyActiveScript() {
+      const box = document.getElementById('generated-script-box');
+      if (!box || !box.value) return;
+      safeCopyText(box.value, `Script Mode ${currentScriptMode} berhasil disalin!`);
+    }
+
+    // ============================================================================
+    // PARSER EXCEL CERDAS: MENDUKUNG FILE `LHI DISDIKBUD 2025 10.xlsx` & KK PENGADAAN
+    // ============================================================================
+    async function handleExcelFiles(fileList) {
+      if (!fileList || fileList.length === 0) return;
+      let addedCount = 0;
+      let firstAddedIndex = -1;
+
+      for (const file of fileList) {
+        try {
+          const data = await file.arrayBuffer();
+          const wb = XLSX.read(data, { type: 'array' });
+          const isFileNameLhi = /LHI|INVENTARIS/i.test(file.name);
+
+          wb.SheetNames.forEach(sheetName => {
+            const ws = wb.Sheets[sheetName];
+            const rows2d = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+            if (!rows2d || rows2d.length < 2) return;
+
+            let headerRowIdx = -1;
+            let colMap = {};
+
+            for (let i = 0; i < Math.min(35, rows2d.length); i++) {
+              const rowStr = rows2d[i].map(c => String(c || '').toUpperCase().trim());
+              const hasKode = rowStr.some(c => c.includes('KODE BARANG') || c.includes('KODE ASET') || c.includes('KODE REKENING') || c.includes('KODE RINCIAN') || c === 'KODE');
+              const hasNama = rowStr.some(c => c.includes('NAMA BARANG') || c.includes('NAMA BELANJA') || c.includes('JENIS BARANG') || c.includes('URAIAN'));
+              if (hasKode || (isFileNameLhi && hasNama)) {
+                headerRowIdx = i;
+                rowStr.forEach((colName, cIdx) => {
+                  if (!colName) return;
+                  if (colName.includes('NAMA SEKOLAH') || colName.includes('SATUAN PENDIDIKAN') || colName === 'SEKOLAH' || colName.includes('UPB') || colName.includes('UNIT KERJA') || colName.includes('LOKASI')) colMap.sekolah = cIdx;
+                  if (colName.includes('KECAMATAN')) colMap.kecamatan = cIdx;
+                  if (colName.includes('SUB KEGIATAN')) colMap.subKeg = cIdx;
+                  if ((colName.includes('NO') && (colName.includes('SPK') || colName.includes('PESANAN') || colName.includes('KONTRAK') || colName.includes('LHI') || colName.includes('DOKUMEN'))) && colMap.noSpk === undefined) colMap.noSpk = cIdx;
+                  if ((colName.includes('TGL') || colName.includes('TANGGAL')) && (colName.includes('SPK') || colName.includes('PESANAN') || colName.includes('KONTRAK') || colName.includes('LHI'))) colMap.tglSpk = cIdx;
+                  if (colName.includes('PENYEDIA') || colName.includes('PIHAK KETIGA') || colName.includes('REKANAN') || colName.includes('TOKO')) colMap.penyedia = cIdx;
+                  if (colName.includes('NO') && colName.includes('BAST')) colMap.noBast = cIdx;
+                  if ((colName.includes('TGL') || colName.includes('TANGGAL')) && colName.includes('BAST')) colMap.tglBast = cIdx;
+                  if (colName.includes('KETERANGAN') || colName === 'KET') colMap.ketBast = cIdx;
+                  if (colName.includes('NO') && colName.includes('SPV')) {
+                    colMap.noSpv = cIdx;
+                    if (colMap.tglSpv === undefined && cIdx + 1 < rowStr.length) colMap.tglSpvNext = cIdx + 1;
+                  }
+                  if ((colName.includes('TGL') || colName.includes('TANGGAL')) && colName.includes('SPV')) colMap.tglSpv = cIdx;
+                  if (colName.includes('KODE BARANG') || colName.includes('KODE ASET') || colName.includes('KODE RINCIAN') || colName === 'KODE') colMap.kode = cIdx;
+                  else if (colName.includes('KODE REKENING') && colMap.kode === undefined) colMap.kode = cIdx;
+                  if (colName.includes('NIBAR') || colName.includes('ID BARANG') || colName.includes('KODE REGISTER')) colMap.nibar = cIdx;
+                  if (colName.includes('NUP') || colName.includes('REGISTER')) colMap.nup = cIdx;
+                  if (colName.includes('MERK') || colName.includes('MEREK') || colName.includes('TYPE') || colName.includes('TIPE') || colName.includes('SPESIFIKASI')) colMap.merk = cIdx;
+                  if (colName.includes('TAHUN') || colName.includes('THN') || colName.includes('TANGGAL PEROLEHAN') || colName.includes('TGL PEROLEHAN')) colMap.tahun = cIdx;
+                  if (colName.includes('KONDISI')) colMap.kondisi = cIdx;
+                  if (colName.includes('STATUS') || colName.includes('KEBERADAAN') || colName.includes('DITEMUKAN')) colMap.statusAda = cIdx;
+                  if (colName.includes('NAMA BARANG') || colName.includes('NAMA BELANJA') || colName.includes('URAIAN') || colName.includes('JENIS BARANG') || colName.includes('JUDUL')) colMap.judul = cIdx;
+                  if (colName.includes('VOLUME') || colName.includes('JUMLAH BARANG') || colName === 'JUMLAH' || colName === 'QTY' || colName.includes('KUANTITAS') || colName.includes('BANYAKNYA')) colMap.jumlah = cIdx;
+                  if (colName.includes('SATUAN')) colMap.satuan = cIdx;
+                  if (colName.includes('HARGA SATUAN') || colName === 'HARGA' || colName.includes('NILAI PEROLEHAN') || colName.includes('HARGA PEROLEHAN')) colMap.harga = cIdx;
+                  if (colName.includes('TOTAL') || colName.includes('JUMLAH HARGA') || colName.includes('NILAI ASET')) colMap.total = cIdx;
+                });
+                break;
+              }
+            }
+
+            const groupedBySchool = {};
+            const startIdx = headerRowIdx !== -1 ? headerRowIdx + 1 : 0;
+            let lastMeta = {
+              sekolah: `${file.name.replace(/\.[^.]+$/, '')} - ${sheetName}`,
+              kecamatan: 'KABUPATEN DONGGALA',
+              noSpk: isFileNameLhi ? `LHI/DISDIKBUD/2025` : '-',
+              tglSpk: '31-10-2025',
+              noBast: '-',
+              tglBast: '31-10-2025',
+              ketBast: isFileNameLhi ? 'LHI DISDIKBUD 2025' : 'DAU PENDIDIKAN',
+              noSpv: '-',
+              tglSpv: '31-10-2025',
+              penyedia: 'DISDIKBUD',
+              subKeg: isFileNameLhi ? 'Laporan Hasil Inventarisasi (LHI)' : '1.01.02.2.02.0025 - Pengadaan Mebel Sekolah'
+            };
+
+            for (let r = startIdx; r < rows2d.length; r++) {
+              const row = rows2d[r];
+              if (!row || row.length === 0) continue;
+
+              if (colMap.sekolah !== undefined && String(row[colMap.sekolah] || '').trim()) lastMeta.sekolah = String(row[colMap.sekolah]).trim();
+              if (colMap.noSpk !== undefined && String(row[colMap.noSpk] || '').trim()) lastMeta.noSpk = String(row[colMap.noSpk]).trim();
+              if (colMap.tglSpk !== undefined && String(row[colMap.tglSpk] || '').trim()) lastMeta.tglSpk = normalizeDateString(row[colMap.tglSpk]);
+              if (colMap.ketBast !== undefined && String(row[colMap.ketBast] || '').trim()) lastMeta.ketBast = String(row[colMap.ketBast]).trim();
+
+              let kodeFound = '';
+              if (colMap.kode !== undefined) {
+                const rawK = String(row[colMap.kode] || '').trim();
+                const mK = rawK.match(/(\d+\.\d+\.\d+(?:\.\d+)+)/);
+                if (mK) kodeFound = mK[1];
+              }
+              if (!kodeFound) {
+                for (let c = 0; c < row.length; c++) {
+                  const cellStr = String(row[c] || '').trim();
+                  const m = cellStr.match(/^(\d+\.\d+\.\d+\.\d+(?:\.\d+)+)/);
+                  if (m) { kodeFound = m[1]; break; }
+                }
+              }
+
+              const judulBarang = colMap.judul !== undefined ? String(row[colMap.judul] || '').trim() : '';
+              if (!kodeFound && (!isFileNameLhi || !judulBarang)) continue;
+              if (!kodeFound && isFileNameLhi) kodeFound = '1.3.2.05.02.01.023';
+
+              const vol = colMap.jumlah !== undefined ? Math.max(1, cleanNumber(row[colMap.jumlah])) : 1;
+              const hrg = colMap.harga !== undefined ? cleanNumber(row[colMap.harga]) : (colMap.total !== undefined ? cleanNumber(row[colMap.total]) : 0);
+              if (hrg <= 0 && !isFileNameLhi) continue;
+
+              const nupVal = colMap.nup !== undefined ? String(row[colMap.nup] || '1').trim() : '1';
+              let nibarVal = colMap.nibar !== undefined ? String(row[colMap.nibar] || '').trim() : '';
+              if (!nibarVal) {
+                // Cek apakah di kolom kode atau kolom lain ada string NIBAR panjang / dalam kurung siku [...]
+                for (let c = 0; c < row.length; c++) {
+                  const sCell = String(row[c] || '').trim();
+                  const mBracket = sCell.match(/\[(\d{15,})\]/);
+                  if (mBracket) { nibarVal = mBracket[1]; break; }
+                  if (/^\d{18,}$/.test(sCell)) { nibarVal = sCell; break; }
+                }
+              }
+              const merkVal = colMap.merk !== undefined ? String(row[colMap.merk] || '-').trim() : '-';
+              let thnRaw = colMap.tahun !== undefined ? String(row[colMap.tahun] || '2024').trim() : '2024';
+              const mYear = thnRaw.match(/(20\d{2}|19\d{2})/);
+              const thnVal = mYear ? mYear[1] : '2024';
+              const kondVal = colMap.kondisi !== undefined ? normalizeKondisi(row[colMap.kondisi]) : 'Baik';
+              let statVal = colMap.statusAda !== undefined ? String(row[colMap.statusAda] || 'Ada').trim() : 'Ada';
+              // Cek juga apakah di baris tersebut ada tulisan "Tidak Ditemukan" di kolom mana pun
+              if (row.some(cell => /tidak\s*ditemukan/i.test(String(cell || '')))) {
+                statVal = 'Tidak Ditemukan';
+              }
+              const satVal = colMap.satuan !== undefined && String(row[colMap.satuan] || '').trim() ? String(row[colMap.satuan]).trim() : (isFileNameLhi ? 'Unit' : 'Pcs');
+
+              const sKey = lastMeta.sekolah.toUpperCase();
+              if (!groupedBySchool[sKey]) {
+                groupedBySchool[sKey] = {
+                  namaSekolah: lastMeta.sekolah,
+                  kecamatan: lastMeta.kecamatan,
+                  noSpk: lastMeta.noSpk,
+                  tglSpk: lastMeta.tglSpk,
+                  noBast: lastMeta.noBast,
+                  tglBast: lastMeta.tglBast,
+                  ketBast: lastMeta.ketBast,
+                  noSpv: lastMeta.noSpv,
+                  tglSpv: lastMeta.tglSpv,
+                  penyedia: lastMeta.penyedia,
+                  subKegiatan: lastMeta.subKeg,
+                  defaultSatuan: satVal,
+                  kategori: (isFileNameLhi || colMap.kondisi !== undefined || colMap.nup !== undefined) ? 'LHI' : (kodeFound.startsWith('1.3.5') ? 'BUKU' : 'MOBILER'),
+                  rows: []
+                };
+              }
+
+              groupedBySchool[sKey].rows.push({
+                no: groupedBySchool[sKey].rows.length + 1,
+                kode: kodeFound,
+                nibar: nibarVal,
+                nup: nupVal,
+                merk: merkVal,
+                tahun: thnVal,
+                kondisi: kondVal,
+                statusAda: statVal,
+                judul: judulBarang || ('Aset ' + kodeFound),
+                pengarang: isFileNameLhi ? "MA'RUF" : 'Intan Pariwara',
+                jumlah: vol,
+                satuan: satVal,
+                harga: hrg,
+                total: vol * hrg,
+                ket: lastMeta.ketBast
+              });
+            }
+
+            Object.values(groupedBySchool).forEach(sObj => {
+              if (sObj.rows.length > 0) {
+                if (firstAddedIndex === -1) firstAddedIndex = schoolsData.length;
+                schoolsData.push(sObj);
+                addedCount++;
+                if (sObj.kategori === 'LHI') switchScriptMode('LHI');
+              }
+            });
+          });
+        } catch (err) {
+          console.error('Gagal membaca file Excel:', err);
+        }
+      }
+
+      if (addedCount > 0) {
+        document.getElementById('school-counter').innerText = `${schoolsData.length} Paket Data Siap`;
+        currentSchoolIndex = firstAddedIndex;
+        filterSchoolList();
+        showToast(`Berhasil memuat ${addedCount} paket data dari file Excel!`);
+      } else {
+        showToast('Tidak ditemukan baris data aset/LHI yang valid pada file tersebut.');
+      }
+    }
+
+    function downloadThisHtml() {
+      const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('File index.html (v10.0 LHI + Pengadaan) berhasil diunduh!');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      schoolsData = JSON.parse(JSON.stringify(defaultSchools));
+      document.getElementById('school-counter').innerText = `${schoolsData.length} Paket Data Siap`;
+      filterSchoolList();
+    });
+  </script>
+</body>
+</html>
